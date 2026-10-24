@@ -1,0 +1,113 @@
+/* ==========================================================================
+   Variables CSS — Identidad Visual "Laboratorio Editorial"
+   ========================================================================== */
+
+:root {
+  /* Paleta principal */
+  --color-petroleum: #0D3B3E;      /* Azul petróleo — primario */
+  --color-petroleum-light: #145256; /* Hover/active primario */
+  --color-petroleum-dark: #082729;  /* Focus/pressed primario */
+  
+  --color-ivory: #FDFBF7;           /* Marfil — fondo principal */
+  --color-ivory-dark: #F2EFE8;      /* Fondo tarjetas / hover sutil */
+  --color-ivory-border: #C9C4BB;    /* Bordes sutiles */
+  
+  --color-sage: #7A9E7E;            /* Verde salvia — secundario/éxito/libre */
+  --color-sage-light: #9BC29E;      /* Hover secundario */
+  --color-sage-dark: #5D7A60;       /* Focus secundario */
+  
+  /* Semánticos */
+  --color-text-primary: #2D2D2D;    /* Gris grafito — texto principal */
+  --color-text-secondary: #6B6B6B;  /* Gris medio — texto secundario */
+  --color-text-muted: #9B9B9B;      /* Placeholders / deshabilitado */
+  --color-text-inverse: #FDFBF7;    /* Texto sobre fondo oscuro */
+  
+  --color-oxide: #B84038;           /* Rojo óxido — peligro/ocupado/error */
+  --color-oxide-light: #D15A50;     /* Hover peligro */
+  --color-oxide-dark: #90322C;      /* Focus peligro */
+  
+  --color-amber: #C4903E;           /* Ámbar — advertencia/pendiente */
+  --color-amber-light: #D9A856;
+  --color-amber-dark: #9D7331;
+  
+  /* Tipografía */
+  --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", "Fira Code", Consolas, monospace;
+  --font-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  
+  --font-size-xs: 0.75rem;    /* 12px */
+  --font-size-sm: 0.875rem;   /* 14px */
+  --font-size-base: 1rem;     /* 16px */
+  --font-size-lg: 1.125rem;   /* 18px */
+  --font-size-xl: 1.5rem;     /* 24px */
+  --font-size-2xl: 2rem;      /* 32px */
+  --font-size-3xl: 3rem;      /* 48px */
+  
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  
+  --line-height-tight: 1.2;
+  --line-height-normal: 1.5;
+  --line-height-relaxed: 1.75;
+  
+  /* Espaciado (sistema 4px) */
+  --space-1: 0.25rem;   /* 4px */
+  --space-2: 0.5rem;    /* 8px */
+  --space-3: 0.75rem;   /* 12px */
+  --space-4: 1rem;      /* 16px */
+  --space-5: 1.25rem;   /* 20px */
+  --space-6: 1.5rem;    /* 24px */
+  --space-8: 2rem;      /* 32px */
+  --space-10: 2.5rem;   /* 40px */
+  --space-12: 3rem;     /* 48px */
+  --space-16: 4rem;     /* 64px */
+  
+  /* Bordes y radios */
+  --border-width: 1px;
+  --border-radius-sm: 4px;
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+  --border-radius-full: 9999px;
+  
+  /* Sombras */
+  --shadow-sm: 0 1px 2px rgba(13, 59, 62, 0.06);
+  --shadow-md: 0 4px 8px rgba(13, 59, 62, 0.08);
+  --shadow-lg: 0 8px 24px rgba(13, 59, 62, 0.1);
+  
+  /* Transiciones */
+  --transition-fast: 150ms ease;
+  --transition-normal: 250ms ease;
+  
+  /* Layout */
+  --container-max: 72rem;      /* 1152px */
+  --container-padding: var(--space-4);
+  --header-height: 4rem;       /* 64px */
+  
+  /* Z-index */
+  --z-dropdown: 100;
+  --z-modal: 200;
+  --z-toast: 300;
+  --z-tooltip: 400;
+}
+
+/* Modo oscuro (opcional, para futuro) */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-ivory: #1A1A18;
+    --color-ivory-dark: #242420;
+    --color-ivory-border: #3D3D38;
+    --color-text-primary: #F2EFE8;
+    --color-text-secondary: #B8B4A8;
+    --color-text-muted: #7A7A70;
+  }
+}
+
+/* Accesibilidad: reducir movimiento */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --transition-fast: 0ms;
+    --transition-normal: 0ms;
+  }
+}

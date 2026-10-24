@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Inicio · Reservas Lab{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero-content">
+        <h2 id="hero-title" class="hero-title">Sistema de reservas de equipos de laboratorio</h2>
+        <p class="hero-subtitle">Gestión de disponibilidad, creación y cancelación de reservas con persistencia local.</p>
+        <div class="hero-meta">
+            <span class="badge badge--info">Versión 0.1.0 · Sprint 0</span>
+            <span class="badge badge--muted">Hora local: Argentina (ART, UTC-3)</span>
+        </div>
+    </div>
+</section>
+
+<section class="features" aria-labelledby="features-title">
+    <h3 id="features-title" class="section-title">Funcionalidades previstas</h3>
+    <div class="features-grid">
+        <article class="feature-card">
+            <header class="feature-header">
+                <span class="feature-icon" aria-hidden="true">📋</span>
+                <h4 class="feature-title">Inventario fijo</h4>
+            </header>
+            <p class="feature-desc">Cinco unidades de laboratorio definidas en el challenge, sin CRUD en esta versión.</p>
+        </article>
+        <article class="feature-card">
+            <header class="feature-header">
+                <span class="feature-icon" aria-hidden="true">📅</span>
+                <h4 class="feature-title">Calendario semanal</h4>
+            </header>
+            <p class="feature-desc">Vista visual lunes a viernes con bloques horarios para consultar disponibilidad.</p>
+        </article>
+        <article class="feature-card">
+            <header class="feature-header">
+                <span class="feature-icon" aria-hidden="true">✅</span>
+                <h4 class="feature-title">Reservas persistentes</h4>
+            </header>
+            <p class="feature-desc">Creación y cancelación con validación de solapamiento; datos conservados al reiniciar.</p>
+        </article>
+    </div>
+</section>
+
+<section class="status" aria-labelledby="status-title">
+    <h3 id="status-title" class="section-title">Estado del sistema</h3>
+    <dl class="status-list">
+        <div class="status-item">
+            <dt class="status-label">Servidor</dt>
+            <dd class="status-value status-value--ok">Activo</dd>
+        </div>
+        <div class="status-item">
+            <dt class="status-label">Base de datos</dt>
+            <dd class="status-value status-value--pending">Pendiente (Sprint 1)</dd>
+        </div>
+        <div class="status-item">
+            <dt class="status-label">Inventario</dt>
+            <dd class="status-value status-value--pending">Pendiente (seed)</dd>
+        </div>
+        <div class="status-item">
+            <dt class="status-label">Zona horaria</dt>
+            <dd class="status-value">{{ config.TIMEZONE }}</dd>
+        </div>
+    </dl>
+</section>
+{% endblock %}
