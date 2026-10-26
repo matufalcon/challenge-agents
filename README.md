@@ -6,7 +6,7 @@ Sistema local de reservas de equipos de laboratorio con identidad visual propia.
 
 - **Python** 3.10+ (probado en 3.10.7)
 - **Flask** 3.0 — microframework web
-- **SQLite** (stdlib) — persistencia local (Sprint 1+)
+- **SQLite** (stdlib) — persistencia local
 - **HTML/CSS** — sin frameworks, tokens CSS personalizados
 - **pytest** — pruebas automatizadas
 
@@ -26,13 +26,14 @@ Sistema local de reservas de equipos de laboratorio con identidad visual propia.
 - **UI**: Entrada/salida en hora local Argentina (`datetime-local` nativo)
 - **Política**: Nunca guardar naive; convertir en boundaries (entrada/salida)
 
-## Estructura del Proyecto (Sprint 0)
+## Estructura del Proyecto (Sprint 1)
 
 ```
 challenge-reservas/
 ├── app/
-│   ├── __init__.py          # Factory Flask
-│   ├── config.py            # Config centralizada
+│   ├── __init__.py          # Factory Flask + init_db + teardown
+│   ├── config.py            # Config centralizada (DB_PATH, TIMEZONE)
+│   ├── models.py            # Acceso a datos (sqlite3 + FK)
 │   ├── routes/
 │   │   ├── __init__.py
 │   │   └── web.py           # GET /, GET /health
@@ -45,10 +46,18 @@ challenge-reservas/
 │       │   └── base.css     # Reset, layout, componentes
 │       └── js/
 │           └── app.js       # Placeholder
+├── scripts/
+│   ├── schema.sql           # DDL v1 (units, reservations)
+│   └── seed.py              # Seed idempotente (5 equipos)
+├── data/
+│   └── reservations.db      # BD SQLite (gitignore)
 ├── tests/
 │   ├── __init__.py
-│   ├── conftest.py          # Fixtures pytest
-│   └── test_health.py       # Tests /health y GET /
+│   ├── conftest.py          # Fixtures pytest (BD temporal)
+│   ├── test_health.py       # Tests /health y GET /
+│   └── test_db.py           # Tests esquema, seed, constraints
+├── docs/
+│   └── decisions.md         # ADRs (decisiones técnicas)
 ├── run.py                   # Entry point
 ├── requirements.txt
 ├── pytest.ini
@@ -71,11 +80,14 @@ python -m venv .venv
 # 4. Instalar dependencias
 pip install -r requirements.txt
 
-# 5. Ejecutar pruebas automatizadas
-pytest -v
+# 5. Inicializar base de datos e inventario (idempotente)
+.venv\Scripts\python.exe scripts/seed.py
 
-# 6. Levantar servidor de desarrollo
-python run.py
+# 6. Ejecutar pruebas automatizadas
+.venv\Scripts\python.exe -m pytest -v
+
+# 7. Levantar servidor de desarrollo
+.venv\Scripts\python.exe run.py
 ```
 
 > **Nota**: Si PowerShell bloquea la activación del script, ejecutar:
@@ -88,29 +100,67 @@ Endpoints:
 - `GET /` — Página inicial con identidad visual
 - `GET /health` — Health check JSON `{"status":"ok","tz":"America/Argentina/Buenos_Aires"}`
 
+## Base de Datos e Inventario (Sprint 1)
+
+### Esquema
+- **units**: `id`, `code` (UNIQUE), `name`, `type`, `created_at`
+- **reservations**: `id`, `unit_id` (FK→units), `user`, `start_utc`, `end_utc`, `notes`, `status`, `created_at`, `cancelled_at`
+- Índices: `idx_reservations_unit_time`, `idx_reservations_status`
+- Claves foráneas: habilitadas por conexión (`PRAGMA foreign_keys = ON`)
+
+### Inventario fijo (5 equipos del challenge)
+| code | name | type |
+|------|------|------|
+| MIC-01 | Microscopio digital | Microscopía |
+| MIC-02 | Microscopio digital | Microscopía |
+| OSC-01 | Osciloscopio | Medición |
+| MUL-01 | Multímetro | Medición |
+| FUE-01 | Fuente de alimentación | Potencia |
+
+> **Nota**: `type` es una decisión técnica (el enunciado no especifica categorías).
+
+### Seed idempotente
+```powershell
+# Ejecutable múltiples veces sin duplicar
+.venv\Scripts\python.exe scripts/seed.py
+```
+
 ## Pruebas Automatizadas
 
 ```powershell
-# Ejecutar suite completa
-pytest -v
+# Suite completa (14 tests: 3 health + 11 DB)
+.venv\Scripts\python.exe -m pytest -v
 
-# Ejecutar solo tests de salud
-pytest tests/test_health.py -v
+# Solo tests de base de datos
+.venv\Scripts\python.exe -m pytest tests/test_db.py -v
+
+# Solo tests de salud
+.venv\Scripts\python.exe -m pytest tests/test_health.py -v
 ```
 
-**Criterios de aceptación Sprint 0:**
-- `GET /health` → 200 + JSON con `status: "ok"` y `tz: "America/Argentina/Buenos_Aires"`
-- `GET /` → 200 + HTML que contiene "Reservas Lab", "Sistema de reservas de equipos de laboratorio", "Versión 0.1.0", "Argentina (ART, UTC-3)", y las tres funcionalidades previstas
-- Tests pasan en Python 3.10.7
+**Criterios de aceptación Sprint 1:**
+- Esquema creado: tablas `units` y `reservations` con columnas, FK e índices correctos
+- Seed inserta exactamente 5 equipos con codes/names/types correctos
+- Seed idempotente: segunda ejecución = 0 inserciones, total 5
+- Constraint UNIQUE en `code` (no duplicados)
+- `name` NO es UNIQUE (MIC-01 y MIC-02 comparten nombre)
+- FK enforced: insertar reservation con unit_id inexistente → IntegrityError
+- Tests usan BD temporal aislada (no tocan `data/reservations.db`)
+- Suite completa: 14 tests pasan en Python 3.10.7
+
+## Decisiones Técnicas Documentadas
+
+Ver `docs/decisions.md`:
+- ADR-001: Uso de `sqlite3` directo sin ORM + FK por conexión
+- ADR-002: Esquema v1 con `code` único, `name` no único, tipos inferidos
 
 ## Decisiones Pendientes (Próximos Sprints)
 
 - [ ] Horarios de laboratorio (apertura/cierre, días hábiles)
-- [ ] Esquema BD y `seed.py` con 5 unidades del challenge
 - [ ] Lógica de disponibilidad (calendario semanal, bloques horarios)
 - [ ] Creación/cancelación de reservas con validación de solapamiento
 - [ ] Tests de persistencia real (reinicio de proceso)
-- [ ] `docs/decisions.md` y `docs/delegations.md` (trazabilidad)
+- [ ] `docs/delegations.md` (tres delegaciones reales)
 
 ## Licencia
 

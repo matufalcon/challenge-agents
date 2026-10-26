@@ -10,8 +10,8 @@ from app import create_app
 
 @pytest.fixture
 def app():
-    """Crea una app Flask para testing con config de desarrollo."""
-    # Usar BD temporal en memoria para tests
+    """Crea una app Flask para testing con BD temporal."""
+    # Usar BD temporal en archivo para tests
     db_fd, db_path = tempfile.mkstemp(suffix=".db")
     os.close(db_fd)
     
@@ -22,8 +22,8 @@ def app():
         "TIMEZONE": "America/Argentina/Buenos_Aires",
     }
     
-    app = create_app("default")
-    app.config.update(test_config)
+    # Pasar config_overrides ANTES de create_app para que init_db use la BD temporal
+    app = create_app("default", config_overrides=test_config)
     
     with app.app_context():
         yield app
