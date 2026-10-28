@@ -1,4 +1,4 @@
-# Reservas Lab — Challenge
+# Equilab — Challenge agents
 
 Sistema local de reservas de equipos de laboratorio con identidad visual propia.
 

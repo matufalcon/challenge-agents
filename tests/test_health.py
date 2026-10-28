@@ -22,7 +22,7 @@ class TestHealth:
         html = response.get_data(as_text=True)
         
         # Verificar elementos identificables de la página inicial
-        assert "Reservas Lab" in html
+        assert "Equilab" in html
         assert "Sistema de reservas de equipos de laboratorio" in html
         assert "Versión 0.1.0" in html
         assert "Argentina (ART, UTC-3)" in html
