@@ -2,6 +2,7 @@
 
 import pytest
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from app.utils.dates import (
@@ -453,3 +454,219 @@ class TestReservationToDict:
         
         assert result["status"] == "cancelada"
         assert result["cancelled_at"] == "2025-01-15 12:30:00"
+
+
+@pytest.fixture
+def db_path(app):
+    """Obtiene la ruta de la BD temporal del fixture app (ya inicializada)."""
+    return Path(app.config["DB_PATH"])
+
+
+class TestModelsPersistence:
+    """Tests para app.models: persistencia de reservas."""
+
+    @pytest.fixture
+    def db_conn(self, db_path):
+        """Conexión a BD temporal con esquema y seed."""
+        from app.models import get_db_connection
+        from scripts.seed import seed_units
+        
+        conn = get_db_connection(db_path)
+        # init_db ya se ejecutó en el fixture app
+        seed_units(db_path)
+        yield conn
+        conn.close()
+
+    def test_create_reservation_persists(self, db_conn):
+        """Inserción retorna ID, datos correctos en BD, status='activa', created_at seteado."""
+        from app.models import create_reservation, get_reservation_by_id
+        from app.utils.dates import parse_iso_with_tz, parse_db_utc
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc, "Prueba")
+        
+        assert isinstance(res_id, int)
+        assert res_id > 0
+        
+        row = get_reservation_by_id(db_conn, res_id)
+        assert row is not None
+        assert row["id"] == res_id
+        assert row["unit_id"] == 1
+        assert row["user"] == "Juan"
+        assert row["notes"] == "Prueba"
+        assert row["status"] == "activa"
+        assert row["created_at"] is not None
+        assert row["cancelled_at"] is None
+        
+        # Verificar fechas en BD (formato UTC)
+        start_db = parse_db_utc(row["start_utc"])
+        end_db = parse_db_utc(row["end_utc"])
+        assert start_db.hour == 13  # 10:00 ART = 13:00 UTC
+        assert end_db.hour == 14
+
+    def test_create_reservation_fk_enforced(self, db_conn):
+        """unit_id inexistente -> IntegrityError (FK)."""
+        from app.models import create_reservation
+        from app.utils.dates import parse_iso_with_tz
+        import sqlite3
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        with pytest.raises(sqlite3.IntegrityError):
+            create_reservation(db_conn, 999, "Juan", start_utc, end_utc)
+
+    def test_get_reservation_by_id(self, db_conn):
+        """Recupera reserva existente, None si no existe."""
+        from app.models import create_reservation, get_reservation_by_id
+        from app.utils.dates import parse_iso_with_tz
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc)
+        
+        row = get_reservation_by_id(db_conn, res_id)
+        assert row is not None
+        assert row["id"] == res_id
+        
+        # ID inexistente
+        row = get_reservation_by_id(db_conn, 999)
+        assert row is None
+
+    def test_get_reservation_with_unit_join(self, db_conn):
+        """Incluye unit_code y unit_name."""
+        from app.models import create_reservation, get_reservation_with_unit
+        from app.utils.dates import parse_iso_with_tz
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc)
+        
+        row = get_reservation_with_unit(db_conn, res_id)
+        assert row is not None
+        assert "unit_code" in row.keys()
+        assert "unit_name" in row.keys()
+        assert row["unit_code"] == "MIC-01"
+        assert row["unit_name"] == "Microscopio digital"
+        
+        # ID inexistente
+        row = get_reservation_with_unit(db_conn, 999)
+        assert row is None
+
+    def test_get_active_reservations_for_unit(self, db_conn):
+        """Filtra por unidad y estado='activa', opcionalmente por rango."""
+        from app.models import create_reservation, get_active_reservations_for_unit, cancel_reservation
+        from app.utils.dates import parse_iso_with_tz
+        
+        # Crear 3 reservas para unit 1
+        start1 = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end1 = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start1, end1)
+        
+        start2 = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        end2 = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        create_reservation(db_conn, 1, "Pedro", start2, end2)
+        
+        start3 = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        end3 = parse_iso_with_tz("2025-01-15T15:00:00-03:00")
+        create_reservation(db_conn, 1, "Maria", start3, end3)
+        
+        # Una reserva para unit 2 (no debe aparecer)
+        create_reservation(db_conn, 2, "Otro", start1, end1)
+        
+        # Sin filtros: todas las activas de unit 1
+        rows = get_active_reservations_for_unit(db_conn, 1)
+        assert len(rows) == 3
+        
+        # Filtro start_utc: end_utc > start_utc
+        filter_start = parse_iso_with_tz("2025-01-15T11:30:00-03:00")
+        rows = get_active_reservations_for_unit(db_conn, 1, start_utc=filter_start)
+        assert len(rows) == 2  # reservas 2 y 3
+        
+        # Filtro end_utc: start_utc < end_utc
+        filter_end = parse_iso_with_tz("2025-01-15T13:30:00-03:00")
+        rows = get_active_reservations_for_unit(db_conn, 1, end_utc=filter_end)
+        assert len(rows) == 2  # reservas 1 y 2
+        
+        # Ambos filtros: solapan con [11:30, 13:30)
+        rows = get_active_reservations_for_unit(db_conn, 1, start_utc=filter_start, end_utc=filter_end)
+        assert len(rows) == 1  # solo reserva 2
+        
+        # Unit 2 con su propia reserva activa
+        rows = get_active_reservations_for_unit(db_conn, 2)
+        assert len(rows) == 1
+
+    def test_cancel_reservation_updates_status(self, db_conn):
+        """status='cancelada', cancelled_at seteado, datos originales conservados."""
+        from app.models import create_reservation, get_reservation_by_id, cancel_reservation
+        from app.utils.dates import parse_iso_with_tz, parse_db_utc
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc, "Notas")
+        
+        # Cancelar
+        result = cancel_reservation(db_conn, res_id)
+        assert result is True
+        
+        # Verificar cambios
+        row = get_reservation_by_id(db_conn, res_id)
+        assert row["status"] == "cancelada"
+        assert row["cancelled_at"] is not None
+        
+        # Datos originales conservados
+        assert row["user"] == "Juan"
+        assert row["notes"] == "Notas"
+        assert row["unit_id"] == 1
+        
+        # Verificar cancelled_at es UTC válido
+        cancelled = parse_db_utc(row["cancelled_at"])
+        assert cancelled.tzinfo is not None
+
+    def test_cancel_reservation_idempotent(self, db_conn):
+        """Segunda cancelación retorna False (no existe activa)."""
+        from app.models import create_reservation, cancel_reservation
+        from app.utils.dates import parse_iso_with_tz
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc)
+        
+        # Primera cancelación
+        result1 = cancel_reservation(db_conn, res_id)
+        assert result1 is True
+        
+        # Segunda cancelación
+        result2 = cancel_reservation(db_conn, res_id)
+        assert result2 is False
+        
+        # ID inexistente
+        result3 = cancel_reservation(db_conn, 999)
+        assert result3 is False
+
+    def test_cancel_reservation_frees_interval(self, db_conn):
+        """Tras cancelar, get_active_reservations_for_unit no la devuelve."""
+        from app.models import create_reservation, get_active_reservations_for_unit, cancel_reservation
+        from app.utils.dates import parse_iso_with_tz
+        
+        start_utc = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_utc = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start_utc, end_utc)
+        
+        # Antes de cancelar: aparece en activas
+        rows = get_active_reservations_for_unit(db_conn, 1)
+        assert len(rows) == 1
+        
+        # Cancelar
+        cancel_reservation(db_conn, res_id)
+        
+        # Después de cancelar: no aparece en activas
+        rows = get_active_reservations_for_unit(db_conn, 1)
+        assert len(rows) == 0
