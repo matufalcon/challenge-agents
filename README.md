@@ -1,51 +1,62 @@
-# Equilab — Challenge agents
+# Equilab — Challenge
 
-Sistema local de reservas de equipos de laboratorio con identidad visual propia.
+Sistema local de reservas de equipos de laboratorio.
 
-## Stack Tecnológico
+## Descripción y alcance
 
-- **Python** 3.10+ (probado en 3.10.7)
-- **Flask** 3.0 — microframework web
-- **SQLite** (stdlib) — persistencia local
-- **HTML/CSS** — sin frameworks, tokens CSS personalizados
-- **pytest** — pruebas automatizadas
+Aplicación web local para gestionar reservas de cinco equipos de laboratorio fijos. Permite crear, consultar y cancelar reservas con validación de solapamiento y persistencia en SQLite.
 
-## Identidad Visual: "Laboratorio Editorial"
+**Reglas de negocio**
+- Inventario fijo de 5 equipos (sin CRUD de inventario).
+- Solicitante obligatorio y no vacío.
+- Fecha/hora de inicio anterior a la de fin.
+- No hay solapamiento entre reservas activas del mismo equipo.
+- Intervalos consecutivos permitidos (fin = inicio).
+- Equipos distintos pueden reservarse en el mismo horario.
+- Cancelación conserva ID y datos, libera el intervalo, actualiza estado y fecha de cancelación.
+- Persistencia en SQLite: los datos sobreviven a reinicios.
 
-| Token | Color | Uso |
-|-------|-------|-----|
-| `--color-petroleum` | `#0D3B3E` | Primario (headers, botones, enlaces) |
-| `--color-ivory` | `#FDFBF7` | Fondo principal |
-| `--color-sage` | `#7A9E7E` | Secundario (estados libre, acentos) |
-| Tipografía | `IBM Plex Serif` + `IBM Plex Mono` | Editorial + instrumental |
+**Criterios de aceptación (resumen del challenge)**
+- Reservas persisten tras reiniciar la aplicación.
+- Reservas canceladas conservan ID y datos, pero liberan el intervalo.
+- No hay superposición entre reservas activas de una misma unidad.
+- Los límites de intervalos consecutivos se permiten.
+- La disponibilidad y la creación de reservas aplican las mismas reglas.
 
-## Zona Horaria y Fechas
+## Stack tecnológico y estructura
 
-- **Zona horaria**: `America/Argentina/Buenos_Aires` (ART, UTC-3, sin DST desde 2009)
-- **Almacenamiento**: UTC ISO 8601 en BD
-- **UI**: Entrada/salida en hora local Argentina (`datetime-local` nativo)
-- **Política**: Nunca guardar naive; convertir en boundaries (entrada/salida)
-
-## Estructura del Proyecto (Sprint 1)
+| Componente | Versión / Detalle |
+|------------|-------------------|
+| Python     | 3.10+ (probado en 3.10.7) |
+| Flask      | 3.0 |
+| SQLite     | stdlib (`sqlite3`) |
+| Pruebas    | `pytest` |
+| Frontend   | HTML + CSS (sin frameworks) |
 
 ```
 challenge-reservas/
 ├── app/
-│   ├── __init__.py          # Factory Flask + init_db + teardown
+│   ├── __init__.py          # Factory Flask, init_db, teardown
 │   ├── config.py            # Config centralizada (DB_PATH, TIMEZONE)
 │   ├── models.py            # Acceso a datos (sqlite3 + FK)
+│   ├── services/
+│   │   ├── __init__.py
+│   │   └── reservations.py  # Validación y lógica de negocio
+│   ├── utils/
+│   │   ├── __init__.py
+│   │   └── dates.py         # Conversión UTC ↔ ART, parsing ISO 8601
 │   ├── routes/
 │   │   ├── __init__.py
 │   │   └── web.py           # GET /, GET /health
 │   ├── templates/
-│   │   ├── base.html        # Layout base
-│   │   └── index.html       # Página inicial
+│   │   ├── base.html
+│   │   └── index.html
 │   └── static/
 │       ├── css/
-│       │   ├── variables.css # Tokens de color/tipografía
-│       │   └── base.css     # Reset, layout, componentes
+│       │   ├── variables.css
+│       │   └── base.css
 │       └── js/
-│           └── app.js       # Placeholder
+│           └── app.js
 ├── scripts/
 │   ├── schema.sql           # DDL v1 (units, reservations)
 │   └── seed.py              # Seed idempotente (5 equipos)
@@ -54,59 +65,61 @@ challenge-reservas/
 ├── tests/
 │   ├── __init__.py
 │   ├── conftest.py          # Fixtures pytest (BD temporal)
-│   ├── test_health.py       # Tests /health y GET /
-│   └── test_db.py           # Tests esquema, seed, constraints
+│   ├── test_health.py
+│   ├── test_db.py
+│   └── test_reservations.py
 ├── docs/
-│   └── decisions.md         # ADRs (decisiones técnicas)
+│   ├── decisions.md         # ADRs (decisiones técnicas)
+│   └── delegations.md       # Registro de delegaciones
 ├── run.py                   # Entry point
 ├── requirements.txt
 ├── pytest.ini
 ├── .gitignore
-└── README.md
+├── README.md
+└── PROGRESS.md
 ```
 
-## Instalación y Ejecución (Windows PowerShell)
+## Instalación, configuración y ejecución (Windows PowerShell)
+
+> Ejecutar desde la raíz del proyecto (`challenge-reservas/`).
 
 ```powershell
-# 1. Clonar/ubicarse en el directorio del proyecto
-cd C:\Users\Matias\Desktop\challenge-reservas
-
-# 2. Crear entorno virtual (una sola vez)
+# 1. Crear entorno virtual (una sola vez)
 python -m venv .venv
 
-# 3. Activar entorno virtual
+# 2. Activar entorno virtual
 .venv\Scripts\Activate.ps1
 
-# 4. Instalar dependencias
+# 3. Instalar dependencias
 pip install -r requirements.txt
 
-# 5. Inicializar base de datos e inventario (idempotente)
+# 4. Inicializar base de datos e inventario (idempotente)
 .venv\Scripts\python.exe scripts/seed.py
 
-# 6. Ejecutar pruebas automatizadas
+# 5. Ejecutar pruebas automatizadas
 .venv\Scripts\python.exe -m pytest -v
 
-# 7. Levantar servidor de desarrollo
+# 6. Levantar servidor de desarrollo
 .venv\Scripts\python.exe run.py
 ```
 
-> **Nota**: Si PowerShell bloquea la activación del script, ejecutar:
+> Si PowerShell bloquea la activación del script:
 > `Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser`
-> y volver a intentar el paso 3.
+> y repetir el paso 2.
 
-El servidor estará disponible en: **http://localhost:5000**
+Servidor en **http://localhost:5000**
 
-Endpoints:
-- `GET /` — Página inicial con identidad visual
+**Endpoints actuales**
+- `GET /` — Página inicial
 - `GET /health` — Health check JSON `{"status":"ok","tz":"America/Argentina/Buenos_Aires"}`
 
-## Base de Datos e Inventario (Sprint 1)
+## Inicialización de la base de datos e inventario
 
-### Esquema
+### Esquema (`scripts/schema.sql`)
 - **units**: `id`, `code` (UNIQUE), `name`, `type`, `created_at`
-- **reservations**: `id`, `unit_id` (FK→units), `user`, `start_utc`, `end_utc`, `notes`, `status`, `created_at`, `cancelled_at`
-- Índices: `idx_reservations_unit_time`, `idx_reservations_status`
-- Claves foráneas: habilitadas por conexión (`PRAGMA foreign_keys = ON`)
+- **reservations**: `id`, `unit_id` (FK→units), `user`, `start_utc`, `end_utc`, `notes`, `status` (`activa`/`cancelada`), `created_at`, `cancelled_at`
+- Índices: `idx_reservations_unit_time` (`unit_id, start_utc, end_utc`), `idx_reservations_status`
+- FK habilitadas por conexión (`PRAGMA foreign_keys = ON`)
 
 ### Inventario fijo (5 equipos del challenge)
 | code | name | type |
@@ -117,18 +130,18 @@ Endpoints:
 | MUL-01 | Multímetro | Medición |
 | FUE-01 | Fuente de alimentación | Potencia |
 
-> **Nota**: `type` es una decisión técnica (el enunciado no especifica categorías).
+> `type` es una decisión técnica documentada (el enunciado no especifica categorías).
 
 ### Seed idempotente
 ```powershell
-# Ejecutable múltiples veces sin duplicar
 .venv\Scripts\python.exe scripts/seed.py
 ```
+Ejecutable múltiples veces sin duplicar equipos (usa `UNIQUE(code)`).
 
-## Pruebas Automatizadas
+## Ejecución de pruebas
 
 ```powershell
-# Suite completa (14 tests: 3 health + 11 DB)
+# Suite completa
 .venv\Scripts\python.exe -m pytest -v
 
 # Solo tests de base de datos
@@ -136,31 +149,54 @@ Endpoints:
 
 # Solo tests de salud
 .venv\Scripts\python.exe -m pytest tests/test_health.py -v
+
+# Solo tests de reservas (validación, persistencia, solapamiento)
+.venv\Scripts\python.exe -m pytest tests/test_reservations.py -v
 ```
 
-**Criterios de aceptación Sprint 1:**
-- Esquema creado: tablas `units` y `reservations` con columnas, FK e índices correctos
-- Seed inserta exactamente 5 equipos con codes/names/types correctos
-- Seed idempotente: segunda ejecución = 0 inserciones, total 5
-- Constraint UNIQUE en `code` (no duplicados)
-- `name` NO es UNIQUE (MIC-01 y MIC-02 comparten nombre)
-- FK enforced: insertar reservation con unit_id inexistente → IntegrityError
-- Tests usan BD temporal aislada (no tocan `data/reservations.db`)
-- Suite completa: 14 tests pasan en Python 3.10.7
+**Estado actual**: 84 tests aprobados (última ejecución verificada).
 
-## Decisiones Técnicas Documentadas
+## Persistencia, fechas y zona horaria
 
-Ver `docs/decisions.md`:
-- ADR-001: Uso de `sqlite3` directo sin ORM + FK por conexión
-- ADR-002: Esquema v1 con `code` único, `name` no único, tipos inferidos
+- **Zona horaria**: `America/Argentina/Buenos_Aires` (ART, UTC-3, sin DST desde 2009).
+- **Almacenamiento en BD**: UTC como `TEXT` formato `YYYY-MM-DD HH:MM:SS` (compatible con `datetime('now')` de SQLite).
+- **API entrada**: ISO 8601 con zona horaria explícita (ej. `2025-01-15T10:00:00-03:00` o `Z`).
+- **API salida**: ISO 8601 con offset ART (`-03:00`).
+- **UI**: `datetime-local` naive (se asume ART), conversión en boundaries.
+- **Política**: Nunca guardar `datetime` naive; convertir en boundaries (entrada/salida).
 
-## Decisiones Pendientes (Próximos Sprints)
+## Preparación y uso del agente de programación
 
-- [ ] Horarios de laboratorio (apertura/cierre, días hábiles)
-- [ ] Lógica de disponibilidad (calendario semanal, bloques horarios)
-- [ ] Creación/cancelación de reservas con validación de solapamiento
-- [ ] Tests de persistencia real (reinicio de proceso)
-- [ ] `docs/delegations.md` (tres delegaciones reales)
+Este proyecto incluye `AGENTS.md` con instrucciones para el agente:
+- Trabajar en tareas pequeñas y verificables.
+- Explicar plan y archivos antes de implementar.
+- No agregar funcionalidades fuera de alcance sin consultar.
+- No instalar dependencias ni ejecutar acciones destructivas sin informar.
+- No modificar archivos ajenos al proyecto.
+- No inventar resultados de pruebas ni decisiones humanas.
+- No hacer commits automáticos.
+- Mantener `README.md` y `PROGRESS.md` alineados con el comportamiento real.
+- Registrar decisiones técnicas y delegaciones reales con evidencia verificable.
+
+## Decisiones técnicas y registro de delegaciones
+
+- **Decisiones técnicas (ADR)**: `docs/decisions.md`
+  - ADR-001: `sqlite3` directo sin ORM + FK por conexión
+  - ADR-002: Esquema v1 con `code` único, `name` no único, tipos inferidos
+  - ADR-003: Seed idempotente con `INSERT` + captura `IntegrityError`
+  - ADR-004: UTC en BD, ART en UI
+  - ADR-005: Tests con BD temporal aislada
+  - ADR-006: Validación de solapamiento con intervalos semiabiertos `[start, end)`
+
+- **Delegaciones reales**: `docs/delegations.md` (tres delegaciones requeridas por el challenge, pendientes de completarse con evidencia verificable).
+
+## Limitaciones y funcionalidades pendientes
+
+- [ ] Endpoints API REST (`POST /api/reservations`, `GET /api/reservations/<id>`, `PATCH /api/reservations/<id>/cancel`, `GET /api/availability`).
+- [ ] Interfaz web: calendario semanal, formulario de reserva, listado de reservas.
+- [ ] Horarios de laboratorio (apertura/cierre, días hábiles).
+- [ ] Tests de persistencia real (reinicio de proceso).
+- [ ] Completar `docs/delegations.md` con tres delegaciones reales y evidencia verificable.
 
 ## Licencia
 
