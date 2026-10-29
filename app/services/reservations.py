@@ -119,3 +119,90 @@ def reservation_to_dict(row: Any) -> Dict[str, Any]:
         "created_at": row["created_at"],
         "cancelled_at": row["cancelled_at"],
     }
+
+
+# --- Validación de solapamiento ---
+
+def check_overlap(
+    conn,
+    unit_id: int,
+    start_utc: datetime,
+    end_utc: datetime,
+    exclude_id: Optional[int] = None
+) -> None:
+    """Verifica si hay solapamiento con reservas activas del mismo equipo.
+    
+    Args:
+        conn: Conexión SQLite.
+        unit_id: ID de la unidad.
+        start_utc: Inicio en UTC (datetime aware).
+        end_utc: Fin en UTC (datetime aware).
+        exclude_id: ID de reserva a excluir (para actualizaciones futuras).
+    
+    Raises:
+        ValidationError: Si hay solapamiento con reserva activa (code="OVERLAP").
+    """
+    from app.models import get_active_reservations_for_unit
+    from app.utils.dates import parse_db_utc
+    
+    active = get_active_reservations_for_unit(conn, unit_id, start_utc, end_utc)
+    for r in active:
+        if exclude_id is not None and r["id"] == exclude_id:
+            continue
+        existing_start = parse_db_utc(r["start_utc"])
+        existing_end = parse_db_utc(r["end_utc"])
+        # Solapamiento: existing_start < end_utc AND existing_end > start_utc
+        # Intervalos semiabiertos [start, end) -> consecutivos permitidos
+        if existing_start < end_utc and existing_end > start_utc:
+            raise ValidationError(
+                "Solapamiento con una reserva activa.",
+                "OVERLAP"
+            )
+
+
+def create_reservation_with_validation(
+    conn,
+    unit_id: int,
+    user: str,
+    start: str,
+    end: str,
+    notes: Optional[str] = None
+) -> Dict[str, Any]:
+    """Crea una reserva validando input y solapamiento.
+    
+    Args:
+        conn: Conexión SQLite.
+        unit_id: ID del equipo.
+        user: Solicitante.
+        start: ISO 8601 con zona horaria.
+        end: ISO 8601 con zona horaria.
+        notes: Opcional.
+    
+    Returns:
+        Dict con la reserva creada (incluye id, unit_code, unit_name, fechas ISO).
+    
+    Raises:
+        ValidationError: INVALID_USER, INVALID_DATETIME_FORMAT, INVALID_INTERVAL, INVALID_TYPE, OVERLAP
+        sqlite3.IntegrityError: Si unit_id no existe (FK).
+    """
+    from app.models import create_reservation, get_reservation_with_unit
+    
+    # 1. Validar input (tipos, user, formato fechas, intervalo)
+    validated = validate_reservation_input(unit_id, user, start, end, notes)
+    
+    # 2. Verificar solapamiento
+    check_overlap(conn, validated["unit_id"], validated["start_utc"], validated["end_utc"])
+    
+    # 3. Insertar en BD
+    res_id = create_reservation(
+        conn,
+        validated["unit_id"],
+        validated["user"],
+        validated["start_utc"],
+        validated["end_utc"],
+        validated["notes"]
+    )
+    
+    # 4. Retornar reserva completa con JOIN
+    row = get_reservation_with_unit(conn, res_id)
+    return reservation_to_dict(row)

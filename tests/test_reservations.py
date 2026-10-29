@@ -27,6 +27,8 @@ from app.services.reservations import (
     validate_reservation_input,
     ValidationError,
     reservation_to_dict,
+    check_overlap,
+    create_reservation_with_validation,
 )
 
 
@@ -670,3 +672,216 @@ class TestModelsPersistence:
         # Después de cancelar: no aparece en activas
         rows = get_active_reservations_for_unit(db_conn, 1)
         assert len(rows) == 0
+
+class TestOverlapValidation:
+    """Tests para validación de solapamientos (Task 2.3)."""
+
+    @pytest.fixture
+    def db_conn(self, db_path):
+        from app.models import get_db_connection
+        from scripts.seed import seed_units
+        
+        conn = get_db_connection(db_path)
+        seed_units(db_path)
+        yield conn
+        conn.close()
+
+    def test_overlap_same_unit_rejected(self, db_conn):
+        """Nueva reserva solapa con activa misma unidad -> ValidationError('OVERLAP')."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        # Crear reserva existente
+        start_existing = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Intentar crear solapamiento parcial
+        start_new = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        
+        with pytest.raises(ValidationError) as exc:
+            check_overlap(db_conn, 1, start_new, end_new)
+        assert exc.value.code == "OVERLAP"
+
+    def test_overlap_different_unit_allowed(self, db_conn):
+        """Mismo intervalo, unidad distinta -> OK."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        start = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        
+        # Crear reserva en unit 1
+        create_reservation(db_conn, 1, "Juan", start, end)
+        
+        # Mismo intervalo en unit 2 -> no debe lanzar
+        check_overlap(db_conn, 2, start, end)
+
+    def test_consecutive_end_equals_start_allowed(self, db_conn):
+        """fin_existente == inicio_nueva -> OK."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        # Reserva existente 10:00-12:00
+        start_existing = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva empieza exactamente cuando termina la existente
+        start_new = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        
+        # No debe lanzar
+        check_overlap(db_conn, 1, start_new, end_new)
+
+    def test_consecutive_start_equals_end_allowed(self, db_conn):
+        """inicio_existente == fin_nueva -> OK."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        # Reserva existente 12:00-14:00
+        start_existing = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva termina exactamente cuando empieza la existente
+        start_new = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        
+        # No debe lanzar
+        check_overlap(db_conn, 1, start_new, end_new)
+
+    def test_contained_interval_rejected(self, db_conn):
+        """Nueva totalmente dentro de existente -> rechazada."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        start_existing = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva 11:00-13:00 (dentro de 10:00-14:00)
+        start_new = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        
+        with pytest.raises(ValidationError) as exc:
+            check_overlap(db_conn, 1, start_new, end_new)
+        assert exc.value.code == "OVERLAP"
+
+    def test_enveloping_interval_rejected(self, db_conn):
+        """Nueva envuelve a existente -> rechazada."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        start_existing = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva 10:00-14:00 (envuelve a 11:00-13:00)
+        start_new = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        
+        with pytest.raises(ValidationError) as exc:
+            check_overlap(db_conn, 1, start_new, end_new)
+        assert exc.value.code == "OVERLAP"
+
+    def test_cancelled_not_block(self, db_conn):
+        """Reserva cancelada en mismo intervalo -> OK."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation, cancel_reservation
+        
+        start = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        
+        res_id = create_reservation(db_conn, 1, "Juan", start, end)
+        cancel_reservation(db_conn, res_id)  # Cancelar
+        
+        # Mismo intervalo -> no debe lanzar (la cancelada no bloquea)
+        check_overlap(db_conn, 1, start, end)
+
+    def test_overlap_partial_start(self, db_conn):
+        """Solapamiento parcial al inicio -> rechazada."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        # Existente 12:00-14:00
+        start_existing = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T14:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva 11:00-13:00 (solapa inicio de existente)
+        start_new = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        
+        with pytest.raises(ValidationError) as exc:
+            check_overlap(db_conn, 1, start_new, end_new)
+        assert exc.value.code == "OVERLAP"
+
+    def test_overlap_partial_end(self, db_conn):
+        """Solapamiento parcial al final -> rechazada."""
+        from app.services.reservations import check_overlap
+        from app.utils.dates import parse_iso_with_tz
+        from app.models import create_reservation
+        
+        # Existente 10:00-12:00
+        start_existing = parse_iso_with_tz("2025-01-15T10:00:00-03:00")
+        end_existing = parse_iso_with_tz("2025-01-15T12:00:00-03:00")
+        create_reservation(db_conn, 1, "Juan", start_existing, end_existing)
+        
+        # Nueva 11:00-13:00 (solapa final de existente)
+        start_new = parse_iso_with_tz("2025-01-15T11:00:00-03:00")
+        end_new = parse_iso_with_tz("2025-01-15T13:00:00-03:00")
+        
+        with pytest.raises(ValidationError) as exc:
+            check_overlap(db_conn, 1, start_new, end_new)
+        assert exc.value.code == "OVERLAP"
+
+    def test_create_with_validation_rejects_overlap(self, db_conn):
+        """create_reservation_with_validation rechaza overlap antes de insertar."""
+        from app.services.reservations import create_reservation_with_validation
+        from app.models import get_reservation_by_id
+        
+        # Crear reserva existente
+        start1 = "2025-01-15T10:00:00-03:00"
+        end1 = "2025-01-15T12:00:00-03:00"
+        create_reservation_with_validation(db_conn, 1, "Juan", start1, end1)
+        
+        # Intentar crear solapamiento
+        start2 = "2025-01-15T11:00:00-03:00"
+        end2 = "2025-01-15T13:00:00-03:00"
+        
+        with pytest.raises(ValidationError) as exc:
+            create_reservation_with_validation(db_conn, 1, "Pedro", start2, end2)
+        assert exc.value.code == "OVERLAP"
+        
+        # Verificar que NO se insert� la segunda reserva
+        rows = get_reservation_by_id(db_conn, 2)
+        assert rows is None
+
+    def test_create_with_validation_succeeds(self, db_conn):
+        """Sin overlap -> inserta y retorna reserva."""
+        from app.services.reservations import create_reservation_with_validation
+        
+        start = "2025-01-15T10:00:00-03:00"
+        end = "2025-01-15T11:00:00-03:00"
+        
+        result = create_reservation_with_validation(db_conn, 1, "Juan", start, end, "Notas")
+        
+        assert result["id"] is not None
+        assert result["unit_id"] == 1
+        assert result["user"] == "Juan"
+        assert result["notes"] == "Notas"
+        assert result["status"] == "activa"
+        assert result["unit_code"] == "MIC-01"
+        assert result["unit_name"] == "Microscopio digital"
+        assert result["start"] == "2025-01-15T10:00:00-03:00"
+        assert result["end"] == "2025-01-15T11:00:00-03:00"
