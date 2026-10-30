@@ -394,7 +394,7 @@ class TestReservationToDict:
         assert result["end"] == "2025-01-15T11:00:00-03:00"
         assert result["notes"] == "Prueba"
         assert result["status"] == "activa"
-        assert result["created_at"] == "2025-01-15 12:00:00"
+        assert result["created_at"] == "2025-01-15T09:00:00-03:00"
         assert result["cancelled_at"] is None
 
     def test_reservation_to_dict_without_unit_info(self):
@@ -423,6 +423,7 @@ class TestReservationToDict:
         assert result["unit_name"] is None
         assert result["start"] == "2025-01-15T10:00:00-03:00"
         assert result["end"] == "2025-01-15T11:00:00-03:00"
+        assert result["created_at"] == "2025-01-15T09:00:00-03:00"
 
     def test_reservation_to_dict_null_dates(self):
         """Maneja fechas nulas correctamente."""
@@ -447,7 +448,7 @@ class TestReservationToDict:
         assert result["start"] is None
         assert result["end"] is None
         assert result["notes"] is None
-        assert result["cancelled_at"] == "2025-01-15 12:30:00"
+        assert result["cancelled_at"] == "2025-01-15T09:30:00-03:00"
 
     def test_reservation_to_dict_cancelled_status(self):
         """Convierte reserva cancelada correctamente."""
@@ -455,7 +456,7 @@ class TestReservationToDict:
         result = reservation_to_dict(row)
         
         assert result["status"] == "cancelada"
-        assert result["cancelled_at"] == "2025-01-15 12:30:00"
+        assert result["cancelled_at"] == "2025-01-15T09:30:00-03:00"
 
 
 @pytest.fixture
@@ -863,7 +864,7 @@ class TestOverlapValidation:
             create_reservation_with_validation(db_conn, 1, "Pedro", start2, end2)
         assert exc.value.code == "OVERLAP"
         
-        # Verificar que NO se insertó la segunda reserva
+        # Verificar que NO se insertï¿½ la segunda reserva
         rows = get_reservation_by_id(db_conn, 2)
         assert rows is None
 

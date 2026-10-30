@@ -101,10 +101,17 @@ def reservation_to_dict(row: Any) -> Dict[str, Any]:
     # Parsear fechas de BD (formato UTC: YYYY-MM-DD HH:MM:SS) y convertir a ISO con offset ART
     start_iso = None
     end_iso = None
+    created_at_iso = None
+    cancelled_at_iso = None
+    
     if row["start_utc"]:
         start_iso = fmt_iso_with_offset(to_utc(parse_db_utc(row["start_utc"])))
     if row["end_utc"]:
         end_iso = fmt_iso_with_offset(to_utc(parse_db_utc(row["end_utc"])))
+    if row["created_at"]:
+        created_at_iso = fmt_iso_with_offset(to_utc(parse_db_utc(row["created_at"])))
+    if row["cancelled_at"]:
+        cancelled_at_iso = fmt_iso_with_offset(to_utc(parse_db_utc(row["cancelled_at"])))
     
     return {
         "id": row["id"],
@@ -116,8 +123,8 @@ def reservation_to_dict(row: Any) -> Dict[str, Any]:
         "end": end_iso,
         "notes": row["notes"],
         "status": row["status"],
-        "created_at": row["created_at"],
-        "cancelled_at": row["cancelled_at"],
+        "created_at": created_at_iso,
+        "cancelled_at": cancelled_at_iso,
     }
 
 
@@ -158,6 +165,46 @@ def check_overlap(
                 "Solapamiento con una reserva activa.",
                 "OVERLAP"
             )
+
+
+def check_availability(
+    conn,
+    unit_id: int,
+    start_utc: datetime,
+    end_utc: datetime
+) -> Dict[str, Any]:
+    """Verifica disponibilidad de un equipo en un intervalo.
+    
+    Args:
+        conn: Conexión SQLite.
+        unit_id: ID de la unidad.
+        start_utc: Inicio en UTC (datetime aware).
+        end_utc: Fin en UTC (datetime aware).
+    
+    Returns:
+        Dict con 'available' (bool) y 'conflicts' (lista de reservas que solapan).
+    """
+    from app.models import get_active_reservations_for_unit
+    from app.utils.dates import parse_db_utc, fmt_iso_with_offset, to_utc
+    
+    active = get_active_reservations_for_unit(conn, unit_id, start_utc, end_utc)
+    conflicts = []
+    for r in active:
+        existing_start = parse_db_utc(r["start_utc"])
+        existing_end = parse_db_utc(r["end_utc"])
+        # Mismo criterio que check_overlap: semiabierto [start, end)
+        if existing_start < end_utc and existing_end > start_utc:
+            conflicts.append({
+                "id": r["id"],
+                "user": r["user"],
+                "start": fmt_iso_with_offset(to_utc(parse_db_utc(r["start_utc"]))),
+                "end": fmt_iso_with_offset(to_utc(parse_db_utc(r["end_utc"]))),
+            })
+    
+    return {
+        "available": len(conflicts) == 0,
+        "conflicts": conflicts,
+    }
 
 
 def create_reservation_with_validation(

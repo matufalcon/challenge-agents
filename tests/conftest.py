@@ -6,6 +6,8 @@ import os
 from pathlib import Path
 
 from app import create_app
+from app.models import get_db_connection
+from scripts.seed import seed_units
 
 
 @pytest.fixture
@@ -26,6 +28,8 @@ def app():
     app = create_app("default", config_overrides=test_config)
     
     with app.app_context():
+        # Ejecutar seed para poblar inventario
+        seed_units(Path(db_path))
         yield app
     
     # Cleanup
@@ -45,3 +49,17 @@ def client(app):
 def runner(app):
     """Runner de comandos CLI."""
     return app.test_cli_runner()
+
+
+@pytest.fixture
+def db_path(app):
+    """Obtiene la ruta de la BD temporal del fixture app."""
+    return Path(app.config["DB_PATH"])
+
+
+@pytest.fixture
+def db_conn(db_path):
+    """Conexión a BD temporal con esquema y seed."""
+    conn = get_db_connection(db_path)
+    yield conn
+    conn.close()

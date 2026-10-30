@@ -79,12 +79,10 @@ class TestSeed:
     """Pruebas de inicialización del inventario (seed)."""
 
     def test_seed_inserts_five_units(self, db_path):
-        """seed.py inserta exactamente 5 equipos con codes correctos."""
+        """seed.py deja exactamente 5 equipos con codes correctos."""
         from scripts.seed import seed_units
         
-        inserted = seed_units(db_path)
-        assert inserted == 5, f"Se esperaban 5 inserciones, hubo {inserted}"
-        
+        # El fixture app ya ejecutó seed, verificar estado final
         units = get_units_list(db_path)
         assert len(units) == 5
         
@@ -115,11 +113,7 @@ class TestSeed:
         """Ejecutar seed dos veces no duplica equipos."""
         from scripts.seed import seed_units
         
-        # Primera ejecución
-        inserted_1 = seed_units(db_path)
-        assert inserted_1 == 5
-        
-        # Segunda ejecución
+        # El fixture app ya ejecutó seed una vez
         inserted_2 = seed_units(db_path)
         assert inserted_2 == 0, "Segunda ejecución no debería insertar nada"
         

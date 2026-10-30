@@ -29,7 +29,9 @@ def create_app(config_name: str = None, config_overrides: dict = None) -> Flask:
 
     # Registrar blueprints
     from app.routes.web import bp as web_bp
+    from app.routes.api import bp as api_bp
     app.register_blueprint(web_bp)
+    app.register_blueprint(api_bp)
     
     # Teardown: cerrar conexión BD al finalizar request
     app.teardown_appcontext(close_db)
