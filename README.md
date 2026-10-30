@@ -47,6 +47,7 @@ challenge-reservas/
 │   │   └── dates.py         # Conversión UTC ↔ ART, parsing ISO 8601
 │   ├── routes/
 │   │   ├── __init__.py
+│   │   ├── api.py           # Endpoints REST /api/*
 │   │   └── web.py           # GET /, GET /health
 │   ├── templates/
 │   │   ├── base.html
@@ -67,7 +68,8 @@ challenge-reservas/
 │   ├── conftest.py          # Fixtures pytest (BD temporal)
 │   ├── test_health.py
 │   ├── test_db.py
-│   └── test_reservations.py
+│   ├── test_reservations.py
+│   └── test_api.py
 ├── docs/
 │   ├── decisions.md         # ADRs (decisiones técnicas)
 │   └── delegations.md       # Registro de delegaciones
@@ -109,9 +111,14 @@ pip install -r requirements.txt
 
 Servidor en **http://localhost:5000**
 
-**Endpoints actuales**
+**Endpoints implementados**
 - `GET /` — Página inicial
 - `GET /health` — Health check JSON `{"status":"ok","tz":"America/Argentina/Buenos_Aires"}`
+- `GET /api/units` — Lista el inventario fijo de 5 equipos
+- `GET /api/reservations/<id>` — Consulta una reserva por ID
+- `POST /api/reservations` — Crea una reserva con validación completa
+- `PATCH /api/reservations/<id>/cancel` — Cancela una reserva (sin body)
+- `GET /api/availability` — Consulta disponibilidad de un equipo en un intervalo
 
 ## Inicialización de la base de datos e inventario
 
@@ -152,9 +159,12 @@ Ejecutable múltiples veces sin duplicar equipos (usa `UNIQUE(code)`).
 
 # Solo tests de reservas (validación, persistencia, solapamiento)
 .venv\Scripts\python.exe -m pytest tests/test_reservations.py -v
+
+# Solo tests de API
+.venv\Scripts\python.exe -m pytest tests/test_api.py -v
 ```
 
-**Estado actual**: 84 tests aprobados (última ejecución verificada).
+**Estado actual**: 107 tests aprobados (última ejecución verificada).
 
 ## Persistencia, fechas y zona horaria
 
@@ -192,7 +202,6 @@ Este proyecto incluye `AGENTS.md` con instrucciones para el agente:
 
 ## Limitaciones y funcionalidades pendientes
 
-- [ ] Endpoints API REST (`POST /api/reservations`, `GET /api/reservations/<id>`, `PATCH /api/reservations/<id>/cancel`, `GET /api/availability`).
 - [ ] Interfaz web: calendario semanal, formulario de reserva, listado de reservas.
 - [ ] Horarios de laboratorio (apertura/cierre, días hábiles).
 - [ ] Tests de persistencia real (reinicio de proceso).
