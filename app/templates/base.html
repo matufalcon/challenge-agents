@@ -22,9 +22,9 @@
                 </h1>
                 <nav class="site-nav" aria-label="Navegación principal">
                     <ul class="nav-list">
-                        <li><a href="{{ url_for('web.index') }}" class="nav-link nav-link--active">Inicio</a></li>
-                        <li><span class="nav-placeholder">Disponibilidad</span></li>
-                        <li><span class="nav-placeholder">Reservas</span></li>
+                        <li><a href="{{ url_for('web.index') }}" class="nav-link">Inicio</a></li>
+                        <li><a href="{{ url_for('web.availability') }}" class="nav-link">Disponibilidad</a></li>
+                        <li><a href="{{ url_for('web.reservations') }}" class="nav-link">Reservas</a></li>
                     </ul>
                 </nav>
             </div>

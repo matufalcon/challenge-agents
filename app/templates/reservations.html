@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+
+{% block title %}Reservas · Equilab{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero-content">
+        <h2 id="hero-title" class="hero-title">Mis reservas</h2>
+        <p class="hero-subtitle">Consulta y gestiona tus reservas activas.</p>
+    </div>
+</section>
+
+<section class="reservations" aria-labelledby="reservations-title">
+    <h3 id="reservations-title" class="section-title">Reservas activas</h3>
+    <div class="table-wrapper">
+        <table class="table" id="reservations-table">
+            <thead>
+                <tr>
+                    <th scope="col">Equipo</th>
+                    <th scope="col">Solicitante</th>
+                    <th scope="col">Inicio</th>
+                    <th scope="col">Fin</th>
+                    <th scope="col">Estado</th>
+                    <th scope="col">Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="reservations-tbody">
+                <tr class="empty-state">
+                    <td colspan="6">Cargando reservas...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="reservations-actions" aria-labelledby="actions-title">
+    <h3 id="actions-title" class="section-title">Acciones</h3>
+    <div class="actions-grid">
+        <a href="{{ url_for('web.availability') }}" class="btn btn--primary">
+            <span aria-hidden="true">📅</span> Consultar disponibilidad
+        </a>
+    </div>
+</section>
+{% endblock %}

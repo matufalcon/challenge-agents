@@ -1,0 +1,43 @@
+{% extends "base.html" %}
+
+{% block title %}Disponibilidad · Equilab{% endblock %}
+
+{% block content %}
+<section class="hero" aria-labelledby="hero-title">
+    <div class="hero-content">
+        <h2 id="hero-title" class="hero-title">Disponibilidad de equipos</h2>
+        <p class="hero-subtitle">Consulta la disponibilidad de los equipos para un intervalo determinado.</p>
+    </div>
+</section>
+
+<section class="availability" aria-labelledby="availability-title">
+    <h3 id="availability-title" class="section-title">Consultar disponibilidad</h3>
+    <div class="availability-form">
+        <form id="availability-form" class="form-grid">
+            <div class="form-field">
+                <label for="unit_id" class="form-label">Equipo <span class="required" aria-hidden="true">*</span></label>
+                <select id="unit_id" name="unit_id" class="form-select" required>
+                    <option value="">Seleccionar equipo...</option>
+                </select>
+            </div>
+            <div class="form-field">
+                <label for="start" class="form-label">Fecha y hora de inicio <span class="required" aria-hidden="true">*</span></label>
+                <input type="datetime-local" id="start" name="start" class="form-input" required>
+            </div>
+            <div class="form-field">
+                <label for="end" class="form-label">Fecha y hora de fin <span class="required" aria-hidden="true">*</span></label>
+                <input type="datetime-local" id="end" name="end" class="form-input" required>
+            </div>
+            <div class="form-field form-actions">
+                <button type="submit" class="btn btn--primary">Consultar</button>
+            </div>
+        </form>
+    </div>
+</section>
+
+<section class="availability-results" aria-labelledby="results-title" hidden>
+    <h3 id="results-title" class="section-title">Resultado</h3>
+    <div class="availability-summary" id="availability-summary"></div>
+    <div class="calendar" id="calendar" role="grid" aria-label="Calendario semanal de disponibilidad"></div>
+</section>
+{% endblock %}
