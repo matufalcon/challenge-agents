@@ -346,3 +346,164 @@ code, kbd, pre, samp {
   .header-content { justify-content: center; text-align: center; }
   .nav-list { gap: var(--space-3); }
 }
+
+/* ==========================================================================
+   Formularios y Componentes de UI
+   ========================================================================== */
+
+/* Tarjeta de formulario */
+.form-card {
+  background-color: var(--color-ivory);
+  border: 1px solid var(--color-ivory-border);
+  border-radius: var(--border-radius-md);
+  padding: var(--space-6);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Grid de formulario */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: var(--space-4);
+}
+
+.form-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.form-label {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-secondary);
+}
+
+.required {
+  color: var(--color-oxide);
+}
+
+.form-input,
+.form-select {
+  font-family: var(--font-serif);
+  font-size: var(--font-size-base);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-ivory-border);
+  border-radius: var(--border-radius-sm);
+  background-color: var(--color-ivory);
+  color: var(--color-text-primary);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.form-input:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--color-petroleum);
+  box-shadow: 0 0 0 3px rgba(13, 59, 62, 0.15);
+}
+
+.form-select {
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232D2D2D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right var(--space-3) center;
+  background-size: 1.25rem;
+  padding-right: var(--space-10);
+}
+
+.form-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--space-2);
+}
+
+/* Botones */
+.btn {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  font-weight: var(--font-weight-medium);
+  padding: var(--space-2) var(--space-6);
+  border: none;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.btn--primary {
+  background-color: var(--color-petroleum);
+  color: var(--color-ivory);
+}
+
+.btn--primary:hover {
+  background-color: var(--color-petroleum-light);
+}
+
+.btn--primary:focus-visible {
+  outline: 2px solid var(--color-petroleum);
+  outline-offset: 2px;
+}
+
+.btn--secondary {
+  background-color: transparent;
+  color: var(--color-petroleum);
+  border: 1px solid var(--color-petroleum);
+}
+
+.btn--secondary:hover {
+  background-color: var(--color-petroleum);
+  color: var(--color-ivory);
+}
+
+/* Mensajes de error/estado */
+.form-message {
+  padding: var(--space-3);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-sm);
+}
+
+.form-message--error {
+  background-color: rgba(184, 64, 56, 0.1);
+  color: var(--color-oxide);
+  border: 1px solid var(--color-oxide);
+}
+
+.form-message--success {
+  background-color: rgba(122, 158, 126, 0.15);
+  color: var(--color-sage-dark);
+  border: 1px solid var(--color-sage);
+}
+
+/* Responsive para formularios */
+@media (max-width: 48rem) {
+  .form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .btn {
+    width: 100%;
+  }
+}
+
+/* Accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .form-input,
+  .form-select {
+    transition: none;
+  }
+}
+
+/* Focus visible mejorado */
+.form-input:focus-visible,
+.form-select:focus-visible,
+.btn:focus-visible {
+  outline: 2px solid var(--color-petroleum);
+  outline-offset: 2px;
+}

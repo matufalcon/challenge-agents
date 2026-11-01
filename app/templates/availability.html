@@ -12,26 +12,30 @@
 
 <section class="availability" aria-labelledby="availability-title">
     <h3 id="availability-title" class="section-title">Consultar disponibilidad</h3>
-    <div class="availability-form">
-        <form id="availability-form" class="form-grid">
+    <div class="form-card">
+        <form id="availability-form" class="form-grid" novalidate>
             <div class="form-field">
                 <label for="unit_id" class="form-label">Equipo <span class="required" aria-hidden="true">*</span></label>
                 <select id="unit_id" name="unit_id" class="form-select" required>
-                    <option value="">Seleccionar equipo...</option>
+                    <option value="" disabled selected>Seleccionar equipo...</option>
                 </select>
+                <div class="form-message form-message--error" id="unit-error" hidden></div>
             </div>
             <div class="form-field">
                 <label for="start" class="form-label">Fecha y hora de inicio <span class="required" aria-hidden="true">*</span></label>
                 <input type="datetime-local" id="start" name="start" class="form-input" required>
+                <div class="form-message form-message--error" id="start-error" hidden></div>
             </div>
             <div class="form-field">
                 <label for="end" class="form-label">Fecha y hora de fin <span class="required" aria-hidden="true">*</span></label>
                 <input type="datetime-local" id="end" name="end" class="form-input" required>
+                <div class="form-message form-message--error" id="end-error" hidden></div>
             </div>
             <div class="form-field form-actions">
                 <button type="submit" class="btn btn--primary">Consultar</button>
             </div>
         </form>
+        <div class="form-message form-message--error" id="api-error" hidden></div>
     </div>
 </section>
 
@@ -40,4 +44,107 @@
     <div class="availability-summary" id="availability-summary"></div>
     <div class="calendar" id="calendar" role="grid" aria-label="Calendario semanal de disponibilidad"></div>
 </section>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function () {
+  'use strict';
+
+  const select = document.getElementById('unit_id');
+  const form = document.getElementById('availability-form');
+  const apiError = document.getElementById('api-error');
+  const unitError = document.getElementById('unit-error');
+  const startError = document.getElementById('start-error');
+  const endError = document.getElementById('end-error');
+
+  // Cargar equipos al cargar la página
+  async function loadUnits() {
+    try {
+      const resp = await fetch('/api/units');
+      if (!resp.ok) {
+        throw new Error('Error al cargar los equipos');
+      }
+      const data = await resp.json();
+
+      if (!data.units || !Array.isArray(data.units)) {
+        throw new Error('Respuesta inválida del servidor');
+      }
+
+      // Limpiar opciones existentes (excepto la primera)
+      while (select.options.length > 1) {
+        select.remove(1);
+      }
+
+      // Poblar con los equipos
+      data.units.forEach(unit => {
+        const opt = document.createElement('option');
+        opt.value = unit.id;
+        opt.textContent = `${unit.code} — ${unit.name} [${unit.type}]`;
+        select.appendChild(opt);
+      });
+
+      // Mostrar error si no hay equipos
+      if (data.units.length === 0) {
+        showError(apiError, 'No hay equipos disponibles');
+      }
+    } catch (err) {
+      console.error('Error cargando equipos:', err);
+      showError(apiError, 'No se pudieron cargar los equipos. Intente recargar la página.');
+    }
+  }
+
+  function showError(element, message) {
+    element.textContent = message;
+    element.hidden = false;
+  }
+
+  function hideError(element) {
+    element.hidden = true;
+    element.textContent = '';
+  }
+
+  function clearErrors() {
+    [apiError, unitError, startError, endError].forEach(hideError);
+  }
+
+  // Validación básica del formulario
+  form.addEventListener('submit', function (e) {
+    clearErrors();
+
+    let hasError = false;
+
+    if (!select.value) {
+      unitError.textContent = 'Debe seleccionar un equipo';
+      unitError.hidden = false;
+      hasError = true;
+    }
+
+    if (!form.start.value) {
+      startError.textContent = 'La fecha de inicio es obligatoria';
+      startError.hidden = false;
+      hasError = true;
+    }
+
+    if (!form.end.value) {
+      endError.textContent = 'La fecha de fin es obligatoria';
+      endError.hidden = false;
+      hasError = true;
+    }
+
+    if (form.start.value && form.end.value && form.start.value >= form.end.value) {
+      endError.textContent = 'La fecha de fin debe ser posterior a la de inicio';
+      endError.hidden = false;
+      hasError = true;
+    }
+
+    if (hasError) {
+      e.preventDefault();
+    }
+  });
+
+  // Cargar equipos al iniciar
+  document.addEventListener('DOMContentLoaded', loadUnits);
+})();
+</script>
 {% endblock %}
