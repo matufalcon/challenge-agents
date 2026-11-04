@@ -8,15 +8,19 @@
 - **Sprint 2.2:** Capa de persistencia (crear, consultar, cancelar reservas).
 - **Sprint 2.3:** Validación de solapamientos entre reservas (`check_overlap`, `create_reservation_with_validation`).
 - **Sprint 2.4:** Endpoints API REST (`GET /api/units`, `GET /api/reservations/<id>`, `POST /api/reservations`, `PATCH /api/reservations/<id>/cancel`, `GET /api/availability`).
+- **Sprint 3.1:** Navegación funcional y vistas base (Disponibilidad, Reservas).
+- **Sprint 3.2:** Selector de equipos en disponibilidad (`GET /api/units`).
+- **Sprint 3.3:** Calendario semanal de disponibilidad con navegación, bloques libres/ocupados, integración con `GET /api/availability` y selector de equipos.
 
 ## Verificaciones
 
-- Suite completa: **107 tests aprobados** en la última ejecución (2025-10-27).
+- Suite completa: **110 tests aprobados** en la última ejecución (2026-11-03).
 - Servidor Flask: inicio verificado (`python run.py`).
 - Base de datos real (`data/reservations.db`): intacta tras la suite de tests (no se modifica mtime ni size).
 - Persistencia de reservas: pruebas de creación, consulta, cancelación, conservación de datos y liberación de intervalos.
 - Validación de solapamiento: 11 tests cubriendo mismo equipo, equipos distintos, intervalos consecutivos, contenido, envolvente, canceladas, solapamientos parciales, y creación con validación integrada.
 - Endpoints API: 23 tests de integración cubriendo casos de éxito, errores de validación, equipo inexistente, solapamiento, cancelación y disponibilidad.
+- Interfaz web Sprint 3: 3 tests de vistas (navegación, páginas Disponibilidad/Reservas).
 
 ## Historial de tareas
 
@@ -28,12 +32,17 @@
 | Sprint 2.2 | Modelos persistencia (create, get, cancel, listar activas) | 8 | ✅ |
 | Sprint 2.3 | check_overlap, create_reservation_with_validation, 11 tests solapamiento | 11 | ✅ |
 | Sprint 2.4 | 5 endpoints API REST + 23 tests de integración | 23 | ✅ |
+| Sprint 3.1 | Navegación funcional y vistas base (Disponibilidad, Reservas) | 3 | ✅ |
+| Sprint 3.2 | Selector de equipos en disponibilidad (`GET /api/units`) | 0 | ✅ |
+| Sprint 3.3 | Calendario semanal, navegación semanas, bloques libres/ocupados, integración API, selector equipos | 0 | ✅ |
 
-**Total tests**: 107 (3 health + 11 DB + 37 validación/fechas + 8 persistencia + 11 solapamiento + 4 dict + 10 otros + 23 API).
+**Total tests**: 110 (3 health + 11 DB + 37 validación/fechas + 8 persistencia + 11 solapamiento + 4 dict + 10 otros + 23 API + 3 web).
 
 ## Pendiente
 
-- **Sprint 3:** Disponibilidad y calendario semanal, interfaz web.
+- **Sprint 3.4:** Creación de reservas desde el calendario (modal, POST `/api/reservations`).
+- **Sprint 3.5:** Cancelación de reservas desde la lista (PATCH `/api/reservations/<id>/cancel`).
+- **Sprint 3.6:** Página de detalle de reserva (opcional).
 - Integración de funcionalidades y pruebas de extremo a extremo.
 - Completar `docs/delegations.md` con tres delegaciones reales y evidencia verificable.
 - Completar documentación final y revisión para entrega.
