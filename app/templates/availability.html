@@ -1,150 +1,450 @@
 {% extends "base.html" %}
 
-{% block title %}Disponibilidad · Equilab{% endblock %}
+{% block title %}Disponibilidad | Equilab{% endblock %}
 
 {% block content %}
-<section class="hero" aria-labelledby="hero-title">
-    <div class="hero-content">
-        <h2 id="hero-title" class="hero-title">Disponibilidad de equipos</h2>
-        <p class="hero-subtitle">Consulta la disponibilidad de los equipos para un intervalo determinado.</p>
-    </div>
+<section class="page-hero">
+  <p class="eyebrow">Planificación del laboratorio</p>
+  <h2 class="hero-title">Disponibilidad de equipos</h2>
+  <p class="hero-subtitle">
+    Consultá los horarios de uso de los equipos del laboratorio.
+  </p>
 </section>
 
-<section class="availability" aria-labelledby="availability-title">
-    <h3 id="availability-title" class="section-title">Consultar disponibilidad</h3>
-    <div class="form-card">
-        <form id="availability-form" class="form-grid" novalidate>
-            <div class="form-field">
-                <label for="unit_id" class="form-label">Equipo <span class="required" aria-hidden="true">*</span></label>
-                <select id="unit_id" name="unit_id" class="form-select" required>
-                    <option value="" disabled selected>Seleccionar equipo...</option>
-                </select>
-                <div class="form-message form-message--error" id="unit-error" hidden></div>
-            </div>
-            <div class="form-field">
-                <label for="start" class="form-label">Fecha y hora de inicio <span class="required" aria-hidden="true">*</span></label>
-                <input type="datetime-local" id="start" name="start" class="form-input" required>
-                <div class="form-message form-message--error" id="start-error" hidden></div>
-            </div>
-            <div class="form-field">
-                <label for="end" class="form-label">Fecha y hora de fin <span class="required" aria-hidden="true">*</span></label>
-                <input type="datetime-local" id="end" name="end" class="form-input" required>
-                <div class="form-message form-message--error" id="end-error" hidden></div>
-            </div>
-            <div class="form-field form-actions">
-                <button type="submit" class="btn btn--primary">Consultar</button>
-            </div>
-        </form>
-        <div class="form-message form-message--error" id="api-error" hidden></div>
+<section class="form-card" aria-labelledby="form-title">
+  <div class="section-heading">
+    <h3 id="form-title" class="section-title">Consultar disponibilidad</h3>
+    <p>Seleccioná un equipo y el intervalo que querés consultar.</p>
+  </div>
+
+  <form id="availability-form" novalidate>
+    <div class="form-group">
+      <label for="unit_id">Equipo</label>
+      <select id="unit_id" name="unit_id" required>
+        <option value="">Seleccioná un equipo</option>
+      </select>
+      <p class="field-error" id="unit-error" role="alert"></p>
     </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label for="start">Desde</label>
+        <input
+          type="datetime-local"
+          id="start"
+          name="start"
+          required
+        >
+        <p class="field-error" id="start-error" role="alert"></p>
+      </div>
+
+      <div class="form-group">
+        <label for="end">Hasta</label>
+        <input
+          type="datetime-local"
+          id="end"
+          name="end"
+          required
+        >
+        <p class="field-error" id="end-error" role="alert"></p>
+      </div>
+    </div>
+
+    <p class="field-error" id="api-error" role="alert"></p>
+
+    <button type="submit" class="button button-primary">
+      Consultar
+    </button>
+  </form>
 </section>
 
-<section class="availability-results" aria-labelledby="results-title" hidden>
-    <h3 id="results-title" class="section-title">Resultado</h3>
-    <div class="availability-summary" id="availability-summary"></div>
-    <div class="calendar" id="calendar" role="grid" aria-label="Calendario semanal de disponibilidad"></div>
+<section
+  class="availability-results"
+  aria-labelledby="results-title"
+  hidden
+>
+  <div class="section-heading">
+    <h3 id="results-title" class="section-title">
+      Calendario semanal
+    </h3>
+    <p>Vista de lunes a viernes, de 08:00 a 20:00.</p>
+  </div>
+
+  <div class="calendar-section">
+    <div class="week-header">
+      <button
+        type="button"
+        class="week-nav-btn"
+        id="previous-week"
+        aria-label="Ir a la semana anterior"
+      >
+        &larr;
+      </button>
+
+      <h4 class="week-title" id="week-title" aria-live="polite"></h4>
+
+      <button
+        type="button"
+        class="week-nav-btn"
+        id="next-week"
+        aria-label="Ir a la semana siguiente"
+      >
+        &rarr;
+      </button>
+    </div>
+
+    <div
+      class="calendar-grid"
+      id="calendar"
+      role="grid"
+      aria-label="Calendario semanal de disponibilidad"
+    >
+      <div class="calendar-header time-header" role="columnheader">
+        Hora
+      </div>
+
+      <div class="calendar-header day-header" role="columnheader">Lunes</div>
+      <div class="calendar-header day-header" role="columnheader">Martes</div>
+      <div class="calendar-header day-header" role="columnheader">Miércoles</div>
+      <div class="calendar-header day-header" role="columnheader">Jueves</div>
+      <div class="calendar-header day-header" role="columnheader">Viernes</div>
+
+      <div id="calendar-slots" style="display: contents;"></div>
+    </div>
+
+    <div class="week-summary" id="availability-summary">
+      <span class="week-summary__status">
+        Calendario del equipo seleccionado.
+      </span>
+    </div>
+
+    <div class="legend" aria-label="Referencias del calendario">
+      <div class="legend-item">
+        <span class="legend-color legend-color--free" aria-hidden="true"></span>
+        <span>Disponible</span>
+      </div>
+
+      <div class="legend-item">
+        <span class="legend-color legend-color--occupied" aria-hidden="true"></span>
+        <span>Ocupado</span>
+      </div>
+    </div>
+  </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
 <script>
-(function () {
-  'use strict';
 
+(() => {
   const select = document.getElementById('unit_id');
   const form = document.getElementById('availability-form');
-  const apiError = document.getElementById('api-error');
+
   const unitError = document.getElementById('unit-error');
   const startError = document.getElementById('start-error');
   const endError = document.getElementById('end-error');
+  const apiError = document.getElementById('api-error');
 
-  // Cargar equipos al cargar la página
-  async function loadUnits() {
-    try {
-      const resp = await fetch('/api/units');
-      if (!resp.ok) {
-        throw new Error('Error al cargar los equipos');
-      }
-      const data = await resp.json();
+  const results = document.querySelector('.availability-results');
+  const calendarSlots = document.getElementById('calendar-slots');
+  const weekTitle = document.getElementById('week-title');
+  const summary = document.getElementById('availability-summary');
+  const previousWeekButton = document.getElementById('previous-week');
+  const nextWeekButton = document.getElementById('next-week');
 
-      if (!data.units || !Array.isArray(data.units)) {
-        throw new Error('Respuesta inválida del servidor');
-      }
+  const DAYS = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes'];
+  const START_HOUR = 8;
+  const END_HOUR = 20;
+  const SLOT_MINUTES = 30;
+  const ART_OFFSET = '-03:00';
 
-      // Limpiar opciones existentes (excepto la primera)
-      while (select.options.length > 1) {
-        select.remove(1);
-      }
-
-      // Poblar con los equipos
-      data.units.forEach(unit => {
-        const opt = document.createElement('option');
-        opt.value = unit.id;
-        opt.textContent = `${unit.code} — ${unit.name} [${unit.type}]`;
-        select.appendChild(opt);
-      });
-
-      // Mostrar error si no hay equipos
-      if (data.units.length === 0) {
-        showError(apiError, 'No hay equipos disponibles');
-      }
-    } catch (err) {
-      console.error('Error cargando equipos:', err);
-      showError(apiError, 'No se pudieron cargar los equipos. Intente recargar la página.');
-    }
-  }
+  let currentWeekStart = getMonday(new Date());
+  let availabilityRequestId = 0;
 
   function showError(element, message) {
     element.textContent = message;
-    element.hidden = false;
   }
 
   function hideError(element) {
-    element.hidden = true;
     element.textContent = '';
   }
 
   function clearErrors() {
-    [apiError, unitError, startError, endError].forEach(hideError);
+    hideError(unitError);
+    hideError(startError);
+    hideError(endError);
+    hideError(apiError);
   }
 
-  // Validación básica del formulario
-  form.addEventListener('submit', function (e) {
-    clearErrors();
+  async function loadUnits() {
+    try {
+      const response = await fetch('/api/units');
 
-    let hasError = false;
+      if (!response.ok) {
+        throw new Error('No se pudieron cargar los equipos.');
+      }
 
-    if (!select.value) {
-      unitError.textContent = 'Debe seleccionar un equipo';
-      unitError.hidden = false;
-      hasError = true;
+      const data = await response.json();
+
+      if (!Array.isArray(data.units)) {
+        throw new Error('La respuesta de equipos no tiene el formato esperado.');
+      }
+
+      select.querySelectorAll('option:not(:first-child)').forEach((option) => {
+        option.remove();
+      });
+
+      data.units.forEach((unit) => {
+        const option = document.createElement('option');
+        option.value = unit.id;
+        option.textContent = `${unit.code} — ${unit.name} [${unit.type}]`;
+        select.appendChild(option);
+      });
+    } catch (error) {
+      showError(apiError, error.message);
+    }
+  }
+
+  function getMonday(date) {
+    const monday = new Date(Date.UTC(
+      date.getUTCFullYear(),
+      date.getUTCMonth(),
+      date.getUTCDate()
+    ));
+
+    const day = monday.getUTCDay();
+    const daysSinceMonday = (day + 6) % 7;
+
+    monday.setUTCDate(monday.getUTCDate() - daysSinceMonday);
+    return monday;
+  }
+
+  function addDays(date, amount) {
+    const result = new Date(date.getTime());
+    result.setUTCDate(result.getUTCDate() + amount);
+    return result;
+  }
+
+  function formatDate(date) {
+    const year = date.getUTCFullYear();
+    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
+    const day = String(date.getUTCDate()).padStart(2, '0');
+
+    return `${year}-${month}-${day}`;
+  }
+
+  function formatWeekTitle(monday) {
+    const friday = addDays(monday, 4);
+
+    const formatter = new Intl.DateTimeFormat('es-AR', {
+      day: 'numeric',
+      month: 'long',
+      timeZone: 'UTC'
+    });
+
+    return `${formatter.format(monday)} — ${formatter.format(friday)} de ${friday.getUTCFullYear()}`;
+  }
+
+  function formatApiDateTime(date, hour = 0, minute = 0) {
+    const time = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}:00`;
+    return `${formatDate(date)}T${time}${ART_OFFSET}`;
+  }
+
+  function renderCalendarStructure() {
+    calendarSlots.replaceChildren();
+
+    for (let hour = START_HOUR; hour < END_HOUR; hour++) {
+      for (let minute = 0; minute < 60; minute += SLOT_MINUTES) {
+        const timeLabel = `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')}`;
+
+        const timeCell = document.createElement('div');
+        timeCell.className = 'time-column';
+        timeCell.textContent = timeLabel;
+        timeCell.setAttribute('role', 'rowheader');
+        calendarSlots.appendChild(timeCell);
+
+        for (let day = 0; day < DAYS.length; day++) {
+          const date = addDays(currentWeekStart, day);
+
+          const slot = document.createElement('div');
+          slot.className = 'time-slot';
+          slot.setAttribute('role', 'gridcell');
+          slot.setAttribute(
+            'aria-label',
+            `${DAYS[day]} ${formatDate(date)} a las ${timeLabel}`
+          );
+
+          slot.dataset.date = formatDate(date);
+          slot.dataset.start = timeLabel;
+
+          calendarSlots.appendChild(slot);
+        }
+      }
     }
 
-    if (!form.start.value) {
-      startError.textContent = 'La fecha de inicio es obligatoria';
-      startError.hidden = false;
-      hasError = true;
+    weekTitle.textContent = formatWeekTitle(currentWeekStart);
+  }
+
+  async function loadAvailability() {
+    const unitId = select.value;
+
+    if (!unitId) {
+      return;
     }
 
-    if (!form.end.value) {
-      endError.textContent = 'La fecha de fin es obligatoria';
-      endError.hidden = false;
-      hasError = true;
-    }
+    const requestId = ++availabilityRequestId;
 
-    if (form.start.value && form.end.value && form.start.value >= form.end.value) {
-      endError.textContent = 'La fecha de fin debe ser posterior a la de inicio';
-      endError.hidden = false;
-      hasError = true;
-    }
+    summary.querySelector('.week-summary__status').textContent =
+      'Consultando disponibilidad...';
 
-    if (hasError) {
-      e.preventDefault();
+    hideError(apiError);
+
+    const weekEnd = addDays(currentWeekStart, 5);
+
+    const params = new URLSearchParams({
+      unit_id: unitId,
+      start: formatApiDateTime(currentWeekStart),
+      end: formatApiDateTime(weekEnd)
+    });
+
+    try {
+      const response = await fetch(`/api/availability?${params.toString()}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'No se pudo consultar la disponibilidad.');
+      }
+
+      if (requestId !== availabilityRequestId) {
+        return;
+      }
+
+      if (!Array.isArray(data.conflicts)) {
+        throw new Error('La respuesta de disponibilidad no tiene el formato esperado.');
+      }
+
+      renderAvailability(data.conflicts);
+
+      const selectedUnit = select.options[select.selectedIndex].textContent;
+
+      summary.querySelector('.week-summary__status').textContent =
+        `Disponibilidad de ${selectedUnit}.`;
+    } catch (error) {
+      if (requestId !== availabilityRequestId) {
+        return;
+      }
+
+      showError(apiError, error.message);
+
+      summary.querySelector('.week-summary__status').textContent =
+        'No se pudo cargar la disponibilidad.';
     }
+  }
+
+  function renderAvailability(conflicts) {
+    const slots = calendarSlots.querySelectorAll('.time-slot');
+
+    slots.forEach((slot) => {
+      const date = slot.dataset.date;
+      const [hour, minute] = slot.dataset.start.split(':').map(Number);
+
+      const slotStart = new Date(
+        formatApiDateTime(
+          new Date(`${date}T00:00:00Z`),
+          hour,
+          minute
+        )
+      );
+
+      const slotEnd = new Date(
+        slotStart.getTime() + SLOT_MINUTES * 60 * 1000
+      );
+
+      const conflict = conflicts.find((reservation) => {
+        const reservationStart = new Date(reservation.start);
+        const reservationEnd = new Date(reservation.end);
+
+        return reservationStart < slotEnd && reservationEnd > slotStart;
+      });
+
+      if (conflict) {
+        slot.classList.add('time-slot--occupied');
+
+        const tooltip =
+          `Ocupado — ${conflict.user} (${conflict.start.slice(11, 16)} a ${conflict.end.slice(11, 16)})`;
+
+        slot.title = tooltip;
+        slot.dataset.tooltip = tooltip;
+        slot.setAttribute('aria-label', `${slot.getAttribute('aria-label')}. ${tooltip}`);
+      } else {
+        slot.classList.add('time-slot--free');
+        slot.title = 'Disponible';
+      }
+    });
+  }
+
+  async function changeWeek(amount) {
+    currentWeekStart = addDays(currentWeekStart, amount);
+    renderCalendarStructure();
+
+    if (!results.hidden) {
+      await loadAvailability();
+    }
+  }
+
+  previousWeekButton.addEventListener('click', () => {
+    changeWeek(-7);
   });
 
-  // Cargar equipos al iniciar
-  document.addEventListener('DOMContentLoaded', loadUnits);
+  nextWeekButton.addEventListener('click', () => {
+    changeWeek(7);
+  });
+
+  form.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    clearErrors();
+
+    const unitId = select.value;
+    const start = document.getElementById('start').value;
+    const end = document.getElementById('end').value;
+
+    let hasErrors = false;
+
+    if (!unitId) {
+      showError(unitError, 'Seleccioná un equipo.');
+      hasErrors = true;
+    }
+
+    if (!start) {
+      showError(startError, 'Ingresá una fecha y hora de inicio.');
+      hasErrors = true;
+    }
+
+    if (!end) {
+      showError(endError, 'Ingresá una fecha y hora de finalización.');
+      hasErrors = true;
+    }
+
+    if (start && end && end <= start) {
+      showError(endError, 'La finalización debe ser posterior al inicio.');
+      hasErrors = true;
+    }
+
+    if (hasErrors) {
+      return;
+    }
+
+    const selectedDate = new Date(`${start.slice(0, 10)}T00:00:00Z`);
+    currentWeekStart = getMonday(selectedDate);
+
+    results.hidden = false;
+    renderCalendarStructure();
+
+    await loadAvailability();
+  });
+
+  loadUnits();
+  renderCalendarStructure();
 })();
 </script>
 {% endblock %}

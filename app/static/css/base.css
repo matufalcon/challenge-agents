@@ -507,3 +507,287 @@ code, kbd, pre, samp {
   outline: 2px solid var(--color-petroleum);
   outline-offset: 2px;
 }
+
+/* ==========================================================================
+   Calendario Semanal
+   ========================================================================== */
+
+.calendar-section {
+  margin-top: var(--space-8);
+}
+
+.week-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-4);
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.week-title {
+  font-size: var(--font-size-lg);
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-petroleum);
+}
+
+.week-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.week-nav-btn {
+  background-color: var(--color-ivory);
+  border: 1px solid var(--color-ivory-border);
+  color: var(--color-petroleum);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+  transition: background-color var(--transition-fast), border-color var(--transition-fast);
+}
+
+.week-nav-btn:hover:not(:disabled) {
+  background-color: var(--color-ivory-dark);
+  border-color: var(--color-petroleum);
+}
+
+.week-nav-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.calendar-grid {
+  display: grid;
+  grid-template-columns: 60px repeat(5, 1fr);
+  gap: 1px;
+  background-color: var(--color-ivory-border);
+  border: 1px solid var(--color-ivory-border);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.time-header {
+  background-color: var(--color-petroleum);
+  color: var(--color-ivory);
+  padding: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-header {
+  background-color: var(--color-petroleum);
+  color: var(--color-ivory);
+  padding: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-semibold);
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.time-column {
+  background-color: var(--color-ivory-dark);
+  color: var(--color-text-secondary);
+  padding: var(--space-1) var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  text-align: right;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  padding-right: var(--space-2);
+}
+
+.time-slot {
+  background-color: var(--color-ivory);
+  min-height: 40px;
+  border-left: 1px solid var(--color-ivory-border);
+  position: relative;
+  cursor: default;
+}
+
+.time-slot--free {
+  background-color: rgba(122, 158, 126, 0.14);
+}
+
+.time-slot--free:hover {
+  background-color: rgba(122, 158, 126, 0.1);
+}
+
+.time-slot--occupied {
+  background-color: rgba(184, 64, 56, 0.18);
+  cursor: not-allowed;
+}
+
+.time-slot--current {
+  background-color: rgba(13, 59, 62, 0.1);
+}
+
+.time-slot::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-petroleum);
+  color: var(--color-ivory);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius-sm);
+  font-size: var(--font-size-xs);
+  white-space: nowrap;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--transition-fast);
+  pointer-events: none;
+  z-index: var(--z-tooltip);
+}
+
+.time-slot--occupied:hover::after {
+  opacity: 1;
+  visibility: visible;
+}
+
+.week-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  background-color: var(--color-ivory);
+  border: 1px solid var(--color-ivory-border);
+  border-radius: var(--border-radius-sm);
+  flex-wrap: wrap;
+}
+
+.week-summary__status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
+
+.week-summary__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--border-radius-full);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  font-weight: var(--font-weight-medium);
+}
+
+.week-summary__badge--available {
+  background-color: rgba(122, 158, 126, 0.15);
+  color: var(--color-sage-dark);
+  border: 1px solid var(--color-sage);
+}
+
+.week-summary__badge--occupied {
+  background-color: rgba(184, 64, 56, 0.1);
+  color: var(--color-oxide);
+  border: 1px solid var(--color-oxide);
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.legend-color {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--border-radius-sm);
+}
+
+.legend-color--free {
+  background-color: var(--color-ivory);
+  border: 1px solid var(--color-ivory-border);
+}
+
+.legend-color--occupied {
+  background-color: rgba(184, 64, 56, 0.08);
+  border: 1px solid var(--color-oxide);
+}
+
+/* Responsive calendar */
+@media (max-width: 64rem) {
+  .calendar-grid {
+    grid-template-columns: 50px repeat(5, 1fr);
+  }
+
+  .time-header,
+  .day-header {
+    padding: var(--space-1);
+    font-size: var(--font-size-xs);
+  }
+
+  .time-column {
+    padding: var(--space-1);
+    font-size: var(--font-size-xs);
+  }
+
+  .time-slot {
+    min-height: 32px;
+  }
+}
+
+@media (max-width: 48rem) {
+  .calendar-grid {
+    display: block;
+    overflow-x: auto;
+  }
+
+  .calendar-grid > * {
+    min-width: 100px;
+  }
+
+  .week-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .week-nav {
+    justify-content: center;
+  }
+}
+
+/* Accesibilidad calendario */
+@media (prefers-reduced-motion: reduce) {
+  .time-slot {
+    transition: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .time-slot--occupied {
+    background-color: var(--color-oxide);
+    color: var(--color-ivory);
+  }
+
+  .time-slot--free {
+    background-color: var(--color-ivory);
+    border: 1px solid var(--color-petroleum);
+  }
+}
