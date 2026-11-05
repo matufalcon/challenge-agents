@@ -317,6 +317,7 @@
 
           const slot = document.createElement('div');
           slot.className = 'time-slot';
+          slot.tabIndex = -1;
           slot.setAttribute('role', 'gridcell');
           slot.setAttribute(
             'aria-label',
@@ -490,6 +491,79 @@
     renderCalendarStructure();
 
     await loadAvailability();
+  });
+
+    // Modal de creación de reservas
+  const reservationModal = document.getElementById('reservation-modal');
+  const modalUnitId = document.getElementById('modal-unit_id');
+  const modalStart = document.getElementById('modal-start');
+  const modalEnd = document.getElementById('modal-end');
+  const modalUser = document.getElementById('modal-user');
+  const modalNotes = document.getElementById('modal-notes');
+  const modalUserError = document.getElementById('modal-user-error');
+
+  let currentSlot = null;
+
+  function getDefaultEndTime(startTime) {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const totalMinutes = hours * 60 + minutes + SLOT_MINUTES;
+
+    const endHours = Math.floor(totalMinutes / 60);
+    const endMinutes = totalMinutes % 60;
+
+    return `${String(endHours).padStart(2, '0')}:${String(endMinutes).padStart(2, '0')}`;
+  }
+
+  function openReservationModal(slot) {
+    const date = slot.dataset.date;
+    const startTime = slot.dataset.start;
+    const endTime = getDefaultEndTime(startTime);
+
+    // No abrir el modal si la duración inicial supera las 20:00.
+    if (endTime > '20:00') {
+      return;
+    }
+
+    currentSlot = slot;
+
+    modalUnitId.value = select.value;
+    modalStart.value = `${date}T${startTime}`;
+    modalEnd.value = `${date}T${endTime}`;
+
+    modalUser.value = '';
+    modalNotes.value = '';
+    hideError(modalUserError);
+
+    reservationModal.showModal();
+    modalUser.focus();
+  }
+
+  calendarSlots.addEventListener('click', (event) => {
+    const slot = event.target.closest('.time-slot--free');
+
+    if (!slot || !calendarSlots.contains(slot)) {
+      return;
+    }
+
+    openReservationModal(slot);
+  });
+
+  // Cerrar desde los botones del modal.
+  reservationModal
+    .querySelectorAll('[data-action="close"], [data-action="cancel"]')
+    .forEach((button) => {
+      button.addEventListener('click', () => {
+        reservationModal.close();
+      });
+    });
+
+  // Recuperar el foco en el bloque que abrió el modal.
+  reservationModal.addEventListener('close', () => {
+    if (currentSlot && currentSlot.isConnected) {
+      currentSlot.focus();
+    }
+
+    currentSlot = null;
   });
 
   loadUnits();

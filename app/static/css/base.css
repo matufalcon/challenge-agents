@@ -797,6 +797,9 @@ code, kbd, pre, samp {
    ========================================================================== */
 
 .modal {
+  position: fixed;
+  inset: 0;
+  margin: auto;
   border: none;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);
