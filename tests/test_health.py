@@ -18,18 +18,18 @@ class TestHealth:
         """GET / devuelve 200 y HTML con contenido identificable de la página inicial."""
         response = client.get("/")
         assert response.status_code == 200
-        
+
         html = response.get_data(as_text=True)
-        
+
         # Verificar elementos identificables de la página inicial
         assert "Equilab" in html
         assert "Sistema de reservas de equipos de laboratorio" in html
-        assert "Versión 0.1.0" in html
-        assert "Argentina (ART, UTC-3)" in html
-        assert "Inventario fijo" in html
-        assert "Calendario semanal" in html
-        assert "Reservas persistentes" in html
-        
+        assert "Información del sistema" in html
+        assert "5 unidades" in html
+        assert "Lunes a viernes" in html
+        assert "08:00 a 20:00" in html
+        assert "America/Argentina/Buenos_Aires" in html
+
         # Verificar estructura HTML básica
         assert "<html" in html.lower()
         assert "<head>" in html.lower()
