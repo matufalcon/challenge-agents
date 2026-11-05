@@ -131,6 +131,51 @@
     </div>
   </div>
 </section>
+
+<dialog id="reservation-modal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+  <form id="reservation-form" class="modal-form" novalidate>
+    <header class="modal-header">
+      <h3 id="modal-title" class="modal-title">Nueva reserva</h3>
+      <button type="button" class="modal-close" aria-label="Cerrar" data-action="close">&times;</button>
+    </header>
+
+    <div class="modal-form__content">
+      <input type="hidden" name="unit_id" id="modal-unit_id">
+      <input type="hidden" name="start" id="modal-start">
+      <input type="hidden" name="end" id="modal-end">
+
+      <div class="form-field">
+        <label for="modal-user" class="form-label">
+          Solicitante <span class="required" aria-hidden="true">*</span>
+        </label>
+        <input
+          type="text"
+          id="modal-user"
+          name="user"
+          class="form-input"
+          required
+          autocomplete="name"
+        >
+        <p class="form-message form-message--error" id="modal-user-error" hidden></p>
+      </div>
+
+      <div class="form-field">
+        <label for="modal-notes" class="form-label">Notas</label>
+        <textarea
+          id="modal-notes"
+          name="notes"
+          class="form-input form-textarea"
+          rows="3"
+        ></textarea>
+      </div>
+
+      <div class="form-field form-actions">
+        <button type="button" class="btn btn--secondary" data-action="cancel">Cancelar</button>
+        <button type="submit" class="btn btn--primary">Crear reserva</button>
+      </div>
+    </div>
+  </form>
+</dialog>
 {% endblock %}
 
 {% block extra_js %}
@@ -163,17 +208,16 @@
 
   function showError(element, message) {
     element.textContent = message;
+    element.hidden = false;
   }
 
   function hideError(element) {
+    element.hidden = true;
     element.textContent = '';
   }
 
   function clearErrors() {
-    hideError(unitError);
-    hideError(startError);
-    hideError(endError);
-    hideError(apiError);
+    [apiError, unitError, startError, endError].forEach(hideError);
   }
 
   async function loadUnits() {
@@ -186,7 +230,7 @@
 
       const data = await response.json();
 
-      if (!Array.isArray(data.units)) {
+      if (!data.units || !Array.isArray(data.units)) {
         throw new Error('La respuesta de equipos no tiene el formato esperado.');
       }
 
@@ -195,13 +239,18 @@
       });
 
       data.units.forEach((unit) => {
-        const option = document.createElement('option');
-        option.value = unit.id;
-        option.textContent = `${unit.code} — ${unit.name} [${unit.type}]`;
-        select.appendChild(option);
+        const opt = document.createElement('option');
+        opt.value = unit.id;
+        opt.textContent = `${unit.code} — ${unit.name} [${unit.type}]`;
+        select.appendChild(opt);
       });
-    } catch (error) {
-      showError(apiError, error.message);
+
+      if (data.units.length === 0) {
+        showError(apiError, 'No hay equipos disponibles');
+      }
+    } catch (err) {
+      console.error('Error cargando equipos:', err);
+      showError(apiError, 'No se pudieron cargar los equipos. Intente recargar la página.');
     }
   }
 
