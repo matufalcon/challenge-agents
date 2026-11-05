@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="Sistema de reservas de equipos de laboratorio">
+    <meta name="color-scheme" content="light dark">
+    <meta name="theme-color" content="#0D3B3E">
     <title>{% block title %}Equilab{% endblock %}</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -13,25 +15,47 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
+
     <header class="site-header" role="banner">
         <div class="container">
             <div class="header-content">
                 <h1 class="site-title">
-                    <span class="site-title__mark" aria-hidden="true">◆</span>
-                    <span class="site-title__text">Equilab</span>
+                    <a href="{{ url_for('web.index') }}" class="site-title__link" aria-label="Equilab, ir al inicio">
+                        <span class="site-title__mark" aria-hidden="true">◆</span>
+                        <span class="site-title__text">Equilab</span>
+                    </a>
                 </h1>
                 <nav class="site-nav" aria-label="Navegación principal">
                     <ul class="nav-list">
-                        <li><a href="{{ url_for('web.index') }}" class="nav-link">Inicio</a></li>
-                        <li><a href="{{ url_for('web.availability') }}" class="nav-link">Disponibilidad</a></li>
-                        <li><a href="{{ url_for('web.reservations') }}" class="nav-link">Reservas</a></li>
+                        <li>
+                            <a href="{{ url_for('web.index') }}"
+                            class="nav-link {% if request.endpoint == 'web.index' %}nav-link--active{% endif %}"
+                            {% if request.endpoint == 'web.index' %}aria-current="page"{% endif %}>
+                                Inicio
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('web.availability') }}"
+                            class="nav-link {% if request.endpoint == 'web.availability' %}nav-link--active{% endif %}"
+                            {% if request.endpoint == 'web.availability' %}aria-current="page"{% endif %}>
+                                Disponibilidad
+                            </a>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('web.reservations') }}"
+                            class="nav-link {% if request.endpoint == 'web.reservations' %}nav-link--active{% endif %}"
+                            {% if request.endpoint == 'web.reservations' %}aria-current="page"{% endif %}>
+                                Reservas
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
         </div>
     </header>
 
-    <main class="site-main" role="main">
+    <main class="site-main" id="contenido" role="main">
         <div class="container">
             {% block content %}{% endblock %}
         </div>

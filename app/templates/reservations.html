@@ -3,16 +3,15 @@
 {% block title %}Reservas · Equilab{% endblock %}
 
 {% block content %}
-<section class="hero" aria-labelledby="hero-title">
-    <div class="hero-content">
-        <h2 id="hero-title" class="hero-title">Mis reservas</h2>
-        <p class="hero-subtitle">Consulta y gestiona tus reservas activas.</p>
-    </div>
+<section class="page-hero" aria-labelledby="hero-title">
+    <p class="eyebrow">Gestión de reservas</p>
+    <h2 id="hero-title" class="hero-title">Mis reservas</h2>
+    <p class="hero-subtitle">Consulta y gestiona tus reservas activas.</p>
 </section>
 
 <section class="reservations" aria-labelledby="reservations-title">
     <h3 id="reservations-title" class="section-title">Reservas activas</h3>
-    <div class="table-wrapper">
+    <div class="table-wrapper" tabindex="0" role="region" aria-labelledby="reservations-title">
         <table class="table" id="reservations-table">
             <thead>
                 <tr>
@@ -24,7 +23,7 @@
                     <th scope="col">Acciones</th>
                 </tr>
             </thead>
-            <tbody id="reservations-tbody">
+            <tbody id="reservations-tbody" aria-live="polite">
                 <tr class="empty-state">
                     <td colspan="6">Cargando reservas...</td>
                 </tr>

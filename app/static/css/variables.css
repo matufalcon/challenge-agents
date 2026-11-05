@@ -3,38 +3,70 @@
    ========================================================================== */
 
 :root {
-  /* Paleta principal */
-  --color-petroleum: #0D3B3E;      /* Azul petróleo — primario */
+  color-scheme: light dark;
+
+  /* Paleta principal (sin cambios) */
+  --color-petroleum: #0D3B3E;       /* Azul petróleo — primario */
   --color-petroleum-light: #145256; /* Hover/active primario */
   --color-petroleum-dark: #082729;  /* Focus/pressed primario */
-  
+
   --color-ivory: #FDFBF7;           /* Marfil — fondo principal */
   --color-ivory-dark: #F2EFE8;      /* Fondo tarjetas / hover sutil */
   --color-ivory-border: #C9C4BB;    /* Bordes sutiles */
-  
+
   --color-sage: #7A9E7E;            /* Verde salvia — secundario/éxito/libre */
   --color-sage-light: #9BC29E;      /* Hover secundario */
   --color-sage-dark: #5D7A60;       /* Focus secundario */
-  
-  /* Semánticos */
+
+  /* Semánticos (sin cambios) */
   --color-text-primary: #2D2D2D;    /* Gris grafito — texto principal */
   --color-text-secondary: #6B6B6B;  /* Gris medio — texto secundario */
   --color-text-muted: #9B9B9B;      /* Placeholders / deshabilitado */
   --color-text-inverse: #FDFBF7;    /* Texto sobre fondo oscuro */
-  
+
   --color-oxide: #B84038;           /* Rojo óxido — peligro/ocupado/error */
   --color-oxide-light: #D15A50;     /* Hover peligro */
   --color-oxide-dark: #90322C;      /* Focus peligro */
-  
+
   --color-amber: #C4903E;           /* Ámbar — advertencia/pendiente */
   --color-amber-light: #D9A856;
   --color-amber-dark: #9D7331;
-  
-  /* Tipografía */
+
+  /* Tintas: versiones oscuras para texto sobre fondos claros (contraste AA) */
+  --color-sage-ink: #3E5B42;
+  --color-oxide-ink: #8F2F29;
+  --color-amber-ink: #6E5019;
+
+  /* Tokens de interfaz (modo claro) */
+  --bg: #F7F4ED;                    /* Fondo de página */
+  --surface: #FFFFFF;               /* Tarjetas, tablas, inputs */
+  --surface-muted: #F2EFE8;         /* Cabeceras, hover sutil */
+  --border: #DAD5CA;                /* Bordes decorativos */
+  --border-strong: #8A857A;         /* Bordes de controles (3:1) */
+  --text: #2D2D2D;
+  --text-soft: #555555;
+  --text-faint: #6F6F6F;
+  --heading: var(--color-petroleum);
+  --link: var(--color-petroleum);
+  --link-hover: var(--color-petroleum-light);
+  --focus-ring: var(--color-petroleum);
+  --focus-halo: rgba(13, 59, 62, 0.18);
+
+  --btn-primary-bg: var(--color-petroleum);
+  --btn-primary-bg-hover: var(--color-petroleum-light);
+  --btn-primary-text: #FFFFFF;
+
+  --ok-ink: var(--color-sage-ink);
+  --danger-ink: var(--color-oxide-ink);
+  --warn-ink: var(--color-amber-ink);
+
+  --select-arrow: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232D2D2D' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+
+  /* Tipografía (sin cambios) */
   --font-serif: "IBM Plex Serif", Georgia, "Times New Roman", serif;
   --font-mono: "IBM Plex Mono", "SF Mono", "Fira Code", Consolas, monospace;
   --font-system: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  
+
   --font-size-xs: 0.75rem;    /* 12px */
   --font-size-sm: 0.875rem;   /* 14px */
   --font-size-base: 1rem;     /* 16px */
@@ -42,16 +74,16 @@
   --font-size-xl: 1.5rem;     /* 24px */
   --font-size-2xl: 2rem;      /* 32px */
   --font-size-3xl: 3rem;      /* 48px */
-  
+
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-semibold: 600;
   --font-weight-bold: 700;
-  
+
   --line-height-tight: 1.2;
   --line-height-normal: 1.5;
   --line-height-relaxed: 1.75;
-  
+
   /* Espaciado (sistema 4px) */
   --space-1: 0.25rem;   /* 4px */
   --space-2: 0.5rem;    /* 8px */
@@ -63,28 +95,28 @@
   --space-10: 2.5rem;   /* 40px */
   --space-12: 3rem;     /* 48px */
   --space-16: 4rem;     /* 64px */
-  
+
   /* Bordes y radios */
   --border-width: 1px;
   --border-radius-sm: 4px;
   --border-radius-md: 8px;
   --border-radius-lg: 12px;
   --border-radius-full: 9999px;
-  
+
   /* Sombras */
   --shadow-sm: 0 1px 2px rgba(13, 59, 62, 0.06);
-  --shadow-md: 0 4px 8px rgba(13, 59, 62, 0.08);
-  --shadow-lg: 0 8px 24px rgba(13, 59, 62, 0.1);
-  
+  --shadow-md: 0 4px 12px rgba(13, 59, 62, 0.1);
+  --shadow-lg: 0 12px 32px rgba(13, 59, 62, 0.14);
+
   /* Transiciones */
   --transition-fast: 150ms ease;
   --transition-normal: 250ms ease;
-  
+
   /* Layout */
   --container-max: 72rem;      /* 1152px */
   --container-padding: var(--space-4);
   --header-height: 4rem;       /* 64px */
-  
+
   /* Z-index */
   --z-dropdown: 100;
   --z-modal: 200;
@@ -92,15 +124,51 @@
   --z-tooltip: 400;
 }
 
-/* Modo oscuro (opcional, para futuro) */
+@media (min-width: 48rem) {
+  :root {
+    --container-padding: var(--space-6);
+  }
+}
+
+/* Modo oscuro */
 @media (prefers-color-scheme: dark) {
   :root {
+    /* Tokens originales (se conservan tal cual) */
     --color-ivory: #1A1A18;
     --color-ivory-dark: #242420;
     --color-ivory-border: #3D3D38;
     --color-text-primary: #F2EFE8;
     --color-text-secondary: #B8B4A8;
     --color-text-muted: #7A7A70;
+
+    /* Tokens de interfaz */
+    --bg: #111716;
+    --surface: #1A2120;
+    --surface-muted: #222B2A;
+    --border: #33403E;
+    --border-strong: #7B8B88;
+    --text: #ECE8DF;
+    --text-soft: #B9BDB6;
+    --text-faint: #94998F;
+    --heading: #B5D8B8;
+    --link: #9BC29E;
+    --link-hover: #BEE0C0;
+    --focus-ring: #9BC29E;
+    --focus-halo: rgba(155, 194, 158, 0.28);
+
+    --btn-primary-bg: #7A9E7E;
+    --btn-primary-bg-hover: #9BC29E;
+    --btn-primary-text: #082729;
+
+    --ok-ink: #A9D0AC;
+    --danger-ink: #F2A9A2;
+    --warn-ink: #E9C27E;
+
+    --select-arrow: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ECE8DF' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+    --shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.45);
   }
 }
 

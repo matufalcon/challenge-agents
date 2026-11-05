@@ -12,15 +12,15 @@
 </section>
 
 <section class="form-card" aria-labelledby="form-title">
-  <div class="section-heading">
+  <header class="form-card__header">
     <h3 id="form-title" class="section-title">Consultar disponibilidad</h3>
     <p>Seleccioná un equipo y el intervalo que querés consultar.</p>
-  </div>
+  </header>
 
-  <form id="availability-form" novalidate>
+  <form id="availability-form" class="form-stack" novalidate>
     <div class="form-group">
       <label for="unit_id">Equipo</label>
-      <select id="unit_id" name="unit_id" required>
+      <select id="unit_id" name="unit_id" class="form-select" required>
         <option value="">Seleccioná un equipo</option>
       </select>
       <p class="field-error" id="unit-error" role="alert"></p>
@@ -33,6 +33,7 @@
           type="datetime-local"
           id="start"
           name="start"
+          class="form-input"
           required
         >
         <p class="field-error" id="start-error" role="alert"></p>
@@ -44,17 +45,20 @@
           type="datetime-local"
           id="end"
           name="end"
+          class="form-input"
           required
         >
         <p class="field-error" id="end-error" role="alert"></p>
       </div>
     </div>
 
-    <p class="field-error" id="api-error" role="alert"></p>
+    <p class="field-error field-error--block" id="api-error" role="alert"></p>
 
-    <button type="submit" class="button button-primary">
-      Consultar
-    </button>
+    <div class="form-actions">
+      <button type="submit" class="btn btn--primary">
+        Consultar
+      </button>
+    </div>
   </form>
 </section>
 
@@ -67,7 +71,7 @@
     <h3 id="results-title" class="section-title">
       Calendario semanal
     </h3>
-    <p>Vista de lunes a viernes, de 08:00 a 20:00.</p>
+    <p>Vista de lunes a viernes, de 08:00 a 20:00. Hacé clic en un horario disponible para reservarlo.</p>
   </div>
 
   <div class="calendar-section">
@@ -94,22 +98,29 @@
     </div>
 
     <div
-      class="calendar-grid"
-      id="calendar"
-      role="grid"
-      aria-label="Calendario semanal de disponibilidad"
+      class="calendar-scroll"
+      tabindex="0"
+      role="region"
+      aria-label="Calendario semanal, desplazable horizontalmente"
     >
-      <div class="calendar-header time-header" role="columnheader">
-        Hora
+      <div
+        class="calendar-grid"
+        id="calendar"
+        role="grid"
+        aria-label="Calendario semanal de disponibilidad"
+      >
+        <div class="calendar-header time-header" role="columnheader">
+          Hora
+        </div>
+
+        <div class="calendar-header day-header" role="columnheader">Lunes</div>
+        <div class="calendar-header day-header" role="columnheader">Martes</div>
+        <div class="calendar-header day-header" role="columnheader">Miércoles</div>
+        <div class="calendar-header day-header" role="columnheader">Jueves</div>
+        <div class="calendar-header day-header" role="columnheader">Viernes</div>
+
+        <div id="calendar-slots" class="calendar-slots"></div>
       </div>
-
-      <div class="calendar-header day-header" role="columnheader">Lunes</div>
-      <div class="calendar-header day-header" role="columnheader">Martes</div>
-      <div class="calendar-header day-header" role="columnheader">Miércoles</div>
-      <div class="calendar-header day-header" role="columnheader">Jueves</div>
-      <div class="calendar-header day-header" role="columnheader">Viernes</div>
-
-      <div id="calendar-slots" style="display: contents;"></div>
     </div>
 
     <div class="week-summary" id="availability-summary">
@@ -169,7 +180,7 @@
         ></textarea>
       </div>
 
-      <div class="form-field form-actions">
+      <div class="form-actions">
         <button type="button" class="btn btn--secondary" data-action="cancel">Cancelar</button>
         <button type="submit" class="btn btn--primary">Crear reserva</button>
       </div>
