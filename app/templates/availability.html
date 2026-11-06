@@ -153,7 +153,8 @@
     <div class="modal-form__content">
       <input type="hidden" name="unit_id" id="modal-unit_id">
       <input type="hidden" name="start" id="modal-start">
-      <input type="hidden" name="end" id="modal-end">
+
+      <p class="modal-summary" id="modal-summary"></p>
 
       <div class="form-field">
         <label for="modal-user" class="form-label">
@@ -171,6 +172,20 @@
       </div>
 
       <div class="form-field">
+        <label for="modal-end" class="form-label">
+          Hasta <span class="required" aria-hidden="true">*</span>
+        </label>
+        <input
+          type="time"
+          id="modal-end"
+          name="end"
+          class="form-input"
+          required
+        >
+        <p class="form-message form-message--error" id="modal-end-error" hidden></p>
+      </div>
+
+      <div class="form-field">
         <label for="modal-notes" class="form-label">Notas</label>
         <textarea
           id="modal-notes"
@@ -179,6 +194,8 @@
           rows="3"
         ></textarea>
       </div>
+
+      <p class="form-message form-message--error" id="modal-form-error" role="alert" hidden></p>
 
       <div class="form-actions">
         <button type="button" class="btn btn--secondary" data-action="cancel">Cancelar</button>
@@ -515,6 +532,132 @@
 
   let currentSlot = null;
 
+  const reservationForm = document.getElementById('reservation-form');
+  const modalSummary = document.getElementById('modal-summary');
+  const modalEndError = document.getElementById('modal-end-error');
+  const modalFormError = document.getElementById('modal-form-error');
+  const modalSubmitButton = reservationForm.querySelector('button[type="submit"]');
+
+  // Límite VISUAL de la interfaz (20:00). El backend todavía no valida
+  // horarios de laboratorio, por lo que esto no es una garantía del servidor.
+  const MAX_END_TIME = `${String(END_HOUR).padStart(2, '0')}:00`;
+  modalEnd.max = MAX_END_TIME;
+
+  let isSubmitting = false;
+
+  function clearModalErrors() {
+    [modalUserError, modalEndError, modalFormError].forEach(hideError);
+  }
+
+  function setSubmitting(value) {
+    isSubmitting = value;
+    modalSubmitButton.disabled = value;
+    modalSubmitButton.textContent = value ? 'Creando...' : 'Crear reserva';
+  }
+
+  function buildSummaryText(date, startTime) {
+    const unitLabel = select.options[select.selectedIndex].textContent;
+    const [year, month, day] = date.split('-');
+
+    return `${unitLabel} · ${day}/${month}/${year} · desde las ${startTime}`;
+  }
+
+  // Valida en el cliente y devuelve el payload de POST /api/reservations,
+  // o null si hay errores (ya mostrados en el modal). El backend sigue
+  // siendo la autoridad final de validación.
+  function buildReservationPayload() {
+    const unitId = Number(modalUnitId.value);
+    const user = modalUser.value.trim();
+    const notes = modalNotes.value.trim();
+
+    const startValue = modalStart.value;         // 'YYYY-MM-DDTHH:MM' (ART, naive)
+    const date = startValue.slice(0, 10);
+    const startTime = startValue.slice(11, 16);
+    const endTime = modalEnd.value;              // 'HH:MM' o ''
+
+    let valid = true;
+
+    if (!Number.isInteger(unitId) || unitId <= 0) {
+      showError(
+        modalFormError,
+        'No se pudo identificar el equipo. Cerrá el modal y volvé a elegir un horario.'
+      );
+      valid = false;
+    }
+
+    if (!user) {
+      showError(modalUserError, 'Ingresá el nombre del solicitante.');
+      valid = false;
+    }
+
+    if (!endTime) {
+      showError(modalEndError, 'Ingresá la hora de finalización.');
+      valid = false;
+    } else if (endTime <= startTime) {
+      showError(modalEndError, 'La finalización debe ser posterior al inicio.');
+      valid = false;
+    } else if (endTime > MAX_END_TIME) {
+      showError(modalEndError, `La finalización no puede superar las ${MAX_END_TIME}.`);
+      valid = false;
+    }
+
+    if (!valid) {
+      return null;
+    }
+
+    return {
+      unit_id: unitId,
+      user,
+      start: `${startValue}:00${ART_OFFSET}`,
+      end: `${date}T${endTime}:00${ART_OFFSET}`,
+      notes: notes || null
+    };
+  }
+
+  // Traduce una respuesta de error del backend a un mensaje dentro del modal.
+  function showReservationError(status, data) {
+    const code = data && data.code;
+    const message = data && data.error;
+
+    if (status === 400 && code === 'INVALID_USER') {
+      showError(modalUserError, message || 'Ingresá el nombre del solicitante.');
+      modalUser.focus();
+      return;
+    }
+
+    if (status === 400 && code === 'INVALID_INTERVAL') {
+      showError(modalEndError, message || 'La finalización debe ser posterior al inicio.');
+      modalEnd.focus();
+      return;
+    }
+
+    if (status === 404 && code === 'UNIT_NOT_FOUND') {
+      showError(
+        modalFormError,
+        'El equipo seleccionado no existe. Cerrá el modal y volvé a intentarlo.'
+      );
+      return;
+    }
+
+    if (status === 409 && code === 'OVERLAP') {
+      showError(
+        modalFormError,
+        'Ese horario se superpone con otra reserva activa. Ajustá la hora de finalización o elegí otro bloque.'
+      );
+      return;
+    }
+
+    if (status >= 400 && status < 500 && message) {
+      showError(modalFormError, message);
+      return;
+    }
+
+    showError(
+      modalFormError,
+      'El servidor no pudo procesar la solicitud. Intentá nuevamente.'
+    );
+  }
+
   function getDefaultEndTime(startTime) {
     const [hours, minutes] = startTime.split(':').map(Number);
     const totalMinutes = hours * 60 + minutes + SLOT_MINUTES;
@@ -530,8 +673,8 @@
     const startTime = slot.dataset.start;
     const endTime = getDefaultEndTime(startTime);
 
-    // No abrir el modal si la duración inicial supera las 20:00.
-    if (endTime > '20:00') {
+    // No abrir el modal si la duración inicial supera el límite visual de fin.
+    if (endTime > MAX_END_TIME) {
       return;
     }
 
@@ -539,11 +682,13 @@
 
     modalUnitId.value = select.value;
     modalStart.value = `${date}T${startTime}`;
-    modalEnd.value = `${date}T${endTime}`;
+    modalEnd.value = endTime;
 
     modalUser.value = '';
     modalNotes.value = '';
-    hideError(modalUserError);
+    clearModalErrors();
+    setSubmitting(false);
+    modalSummary.textContent = buildSummaryText(date, startTime);
 
     reservationModal.showModal();
     modalUser.focus();
@@ -564,9 +709,74 @@
     .querySelectorAll('[data-action="close"], [data-action="cancel"]')
     .forEach((button) => {
       button.addEventListener('click', () => {
+        if (isSubmitting) {
+          return;
+        }
+
         reservationModal.close();
       });
     });
+    // Escape: no cerrar el modal mientras hay un envío en curso.
+  reservationModal.addEventListener('cancel', (event) => {
+    if (isSubmitting) {
+      event.preventDefault();
+    }
+  });
+
+  reservationForm.addEventListener('submit', async (event) => {
+    event.preventDefault();
+
+    if (isSubmitting) {
+      return;
+    }
+
+    clearModalErrors();
+
+    const payload = buildReservationPayload();
+
+    if (!payload) {
+      return;
+    }
+
+    setSubmitting(true);
+    let created = false;
+
+    try {
+      const response = await fetch('/api/reservations', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+
+      let data = null;
+
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        data = null;
+      }
+
+      if (response.status === 201) {
+        created = true;
+      } else {
+        showReservationError(response.status, data);
+      }
+    } catch (networkError) {
+      console.error('Error de red al crear la reserva:', networkError);
+      showError(
+        modalFormError,
+        'No se pudo conectar con el servidor. Verificá tu conexión e intentá nuevamente.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
+
+    if (created) {
+      reservationModal.close();
+      renderCalendarStructure();
+      await loadAvailability();
+    }
+  });
 
   // Recuperar el foco en el bloque que abrió el modal.
   reservationModal.addEventListener('close', () => {
