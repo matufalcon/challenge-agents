@@ -13,10 +13,11 @@
 - **Sprint 3.3:** Calendario semanal de disponibilidad con navegación, bloques libres/ocupados, integración con `GET /api/availability` y selector de equipos.
 - **Sprint 3.4.1:** Estructura HTML del modal (`<dialog>`) y CSS (accesible, foco, Escape).
 - **Sprint 3.4.2:** Apertura del modal desde bloques disponibles, precarga de equipo/fecha/horario, cierre y recuperación del foco, modal centrado.
+- **Sprint 3.4.3:** JS: envío formulario (`POST /api/reservations`), manejo 201/400/409/errores red, cierre y refresco.
 
 ## Verificaciones
 
-- Suite completa: **110 tests aprobados** en la última ejecución (2026-11-03).
+- Suite completa: **110 tests aprobados** en la última ejecución (2026-11-05).
 - Servidor Flask: inicio verificado (`python run.py`).
 - Base de datos real (`data/reservations.db`): intacta tras la suite de tests (no se modifica mtime ni size).
 - Persistencia de reservas: pruebas de creación, consulta, cancelación, conservación de datos y liberación de intervalos.
@@ -24,6 +25,7 @@
 - Endpoints API: 23 tests de integración cubriendo casos de éxito, errores de validación, equipo inexistente, solapamiento, cancelación y disponibilidad.
 - Interfaz web Sprint 3: 3 tests de vistas (navegación, páginas Disponibilidad/Reservas).
 - **Sprint 3.4.2 validado:** 110 tests aprobados. Pruebas manuales en navegador: apertura, precarga, cierre con Cancelar/X/Escape, centrado y recuperación del foco. Pendiente verificar el comportamiento al seleccionar bloques ocupados.
+- **Sprint 3.4.3 validado:** 110 tests aprobados. Pruebas manuales satisfactorias de creación, refresco del calendario, conflictos, validaciones, errores y prevención de duplicados.
 
 ## Historial de tareas
 
@@ -40,12 +42,12 @@
 | Sprint 3.3 | Calendario semanal, navegación semanas, bloques libres/ocupados, integración API, selector equipos | 0 | ✅ |
 | Sprint 3.4.1 | Modal HTML (`<dialog>`) y CSS (accesible, foco, Escape) | 0 | ✅ |
 | Sprint 3.4.2 | Apertura del modal desde bloques libres, precarga de datos, cierre y recuperación del foco, centrado | 0 | ✅ |
+| Sprint 3.4.3 | Envío y validación del formulario de reservas | 0 | ✅ |
 
 **Total tests**: 110 (3 health + 11 DB + 37 validación/fechas + 8 persistencia + 11 solapamiento + 4 dict + 10 otros + 23 API + 3 web).
 
 ## Pendiente
 
-- **Sprint 3.4.3:** JS: envío formulario (`POST /api/reservations`), manejo 201/400/409/errores red, cierre y refresco.
 - **Sprint 3.4.4:** UX: spinner, toast éxito/error, foco/Escape, accesibilidad.
 - **Sprint 3.4.5:** Tests de integración (API 201/400/409, web E2E mock).
 - **Sprint 3.5:** Cancelación de reservas desde la lista (PATCH `/api/reservations/<id>/cancel`).
